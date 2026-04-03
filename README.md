@@ -1,10 +1,61 @@
 --[[
     DAVI HUB - Night 2
-    Com sistema de key
+    Com sistema de key, notificações e toggles On/Off
 ]]
 
+-- ========== SISTEMA DE NOTIFICAÇÕES ==========
+local function notificar(titulo, texto, cor, duracao)
+    duracao = duracao or 3
+    cor = cor or Color3.fromRGB(255, 140, 0)
+    
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "Notificacao"
+    gui.Parent = game:GetService("CoreGui")
+    gui.ResetOnSpawn = false
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 60)
+    frame.Position = UDim2.new(1, -310, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+    
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -10, 0, 25)
+    titleLbl.Position = UDim2.new(0, 5, 0, 5)
+    titleLbl.Text = titulo
+    titleLbl.TextColor3 = cor
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Font = Enum.Font.GothamBold
+    titleLbl.TextSize = 14
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.Parent = frame
+    
+    local msgLbl = Instance.new("TextLabel")
+    msgLbl.Size = UDim2.new(1, -10, 0, 25)
+    msgLbl.Position = UDim2.new(0, 5, 0, 30)
+    msgLbl.Text = texto
+    msgLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    msgLbl.BackgroundTransparency = 1
+    msgLbl.Font = Enum.Font.Gotham
+    msgLbl.TextSize = 12
+    msgLbl.TextXAlignment = Enum.TextXAlignment.Left
+    msgLbl.Parent = frame
+    
+    -- Animação de entrada
+    frame:TweenPosition(UDim2.new(1, -10, 0, 10), Enum.TweenDirection.Out, Enum.TweenInfo.new(0.3), true)
+    
+    task.wait(duracao)
+    
+    -- Animação de saída
+    frame:TweenPosition(UDim2.new(1, 10, 0, 10), Enum.TweenDirection.Out, Enum.TweenInfo.new(0.3), true)
+    task.wait(0.3)
+    gui:Destroy()
+end
+
 -- ========== SISTEMA DE KEY ==========
-local key = "DAVI2024"  -- Mude para a key que quiser
+local key = "DAVI2024"
 
 local keyGui = Instance.new("ScreenGui")
 keyGui.Name = "KeySystem"
@@ -50,10 +101,12 @@ errorLabel.Parent = frame
 btn.MouseButton1Click:Connect(function()
     if box.Text == key then
         keyGui:Destroy()
+        notificar("✅ KEY VÁLIDA", "Hub carregando...", Color3.fromRGB(100, 255, 100), 2)
         carregarHub()
     else
         box.Text = ""
         errorLabel.Text = "❌ Key inválida! Tente novamente."
+        notificar("❌ KEY INVÁLIDA", "A key digitada está incorreta", Color3.fromRGB(255, 100, 100), 3)
     end
 end)
 
@@ -175,7 +228,10 @@ function carregarHub()
         bt.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
         bt.TextColor3 = Color3.fromRGB(255, 255, 255)
         bt.Parent = s
-        bt.MouseButton1Click:Connect(cb)
+        bt.MouseButton1Click:Connect(function()
+            cb()
+            notificar("📌 TELEPORT", "Teleportado para " .. txt, Color3.fromRGB(255, 200, 100), 2)
+        end)
         bt.MouseEnter:Connect(function() bt.BackgroundColor3 = Color3.fromRGB(255, 140, 0) end)
         bt.MouseLeave:Connect(function() bt.BackgroundColor3 = Color3.fromRGB(45, 45, 60) end)
     end
@@ -205,6 +261,7 @@ function carregarHub()
             bt.BackgroundColor3 = st and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(80, 80, 100)
             bt.TextColor3 = st and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 100, 100)
             cb(st)
+            notificar("⚙️ CONFIG", txt .. " " .. (st and "ativado" or "desativado"), Color3.fromRGB(100, 200, 255), 2)
         end)
     end
 
@@ -335,11 +392,11 @@ function carregarHub()
     local DIST = 40
     local COOLDOWN = 8
     local janelas = {
-        {posJan = Vector3.new(-292.1, 82.4, -38.8), posBot = Vector3.new(-288.5, 82.4, -39.6)},
-        {posJan = Vector3.new(-321.9, 82.4, -37.4), posBot = Vector3.new(-318.1, 82.4, -40.1)},
-        {posJan = Vector3.new(-311.1, 82.4, 38.7), posBot = Vector3.new(-313.0, 82.6, 35.4)},
-        {posJan = Vector3.new(-282.0, 82.4, -111.9), posBot = Vector3.new(-278.4, 82.4, -113.3)},
-        {posJan = Vector3.new(-309.6, 82.4, -111.9), posBot = Vector3.new(-307.9, 82.4, -113.4)}
+        {nome="Jan1", posJan=Vector3.new(-292.1, 82.4, -38.8), posBot=Vector3.new(-288.5, 82.4, -39.6)},
+        {nome="Jan2", posJan=Vector3.new(-321.9, 82.4, -37.4), posBot=Vector3.new(-318.1, 82.4, -40.1)},
+        {nome="Jan3", posJan=Vector3.new(-311.1, 82.4, 38.7), posBot=Vector3.new(-313.0, 82.6, 35.4)},
+        {nome="Jan4", posJan=Vector3.new(-282.0, 82.4, -111.9), posBot=Vector3.new(-278.4, 82.4, -113.3)},
+        {nome="Jan5", posJan=Vector3.new(-309.6, 82.4, -111.9), posBot=Vector3.new(-307.9, 82.4, -113.4)}
     }
     local function ativarLuz(jan)
         teleport(jan.posBot)
@@ -357,6 +414,7 @@ function carregarHub()
         flash.Parent = player.PlayerGui
         task.wait(0.2)
         flash:Destroy()
+        notificar("🤖 AUTO SCARE", "Mutante detectado na " .. jan.nome .. "! Luz ativada.", Color3.fromRGB(255, 100, 100), 3)
     end
     local function scareLoop()
         while scareActive do
@@ -401,7 +459,7 @@ function carregarHub()
                     teleport(pos + Vector3.new(0,3,0))
                     task.wait(0.5)
                     for _, det in pairs(gen:GetDescendants()) do
-                        if det:IsA("ClickDetector") then fireclickdetector(det); break end
+                        if det:IsA("ClickDetector") then fireclickdetector(det); notificar("🔧 AUTO REPARO", "Gerador reparado!", Color3.fromRGB(100, 200, 100), 2); break end
                     end
                 end
             end
@@ -416,7 +474,7 @@ function carregarHub()
                     teleport(pos + Vector3.new(0,2,0))
                     task.wait(0.5)
                     for _, det in pairs(fus:GetDescendants()) do
-                        if det:IsA("ClickDetector") then fireclickdetector(det); break end
+                        if det:IsA("ClickDetector") then fireclickdetector(det); notificar("🔧 AUTO REPARO", "Caixa de fusíveis reparada!", Color3.fromRGB(100, 200, 100), 2); break end
                     end
                 end
             end
@@ -456,5 +514,4 @@ function carregarHub()
     end
     s.CanvasSize = UDim2.new(0, 0, 0, totalH + 30)
 
-    print("✅ DAVI HUB - Night 2 carregado com sistema de key!")
-end
+    notificar("🎉 HUB CARREGADO", "DAVI HUB - Night 2 pronto para uso!", Color3.from
