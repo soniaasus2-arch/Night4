@@ -315,4 +315,3 @@ local totalH=0
 for _,c in pairs(s:GetChildren())do if c:IsA("TextButton")or c:IsA("Frame")then totalH=totalH+48 end end
 s.CanvasSize=UDim2.new(0,0,0,totalH+30)
 print("✅ DAVI HUB - Noite 2 completo carregado!")
-
