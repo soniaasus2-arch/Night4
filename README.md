@@ -1,3 +1,49 @@
+-- SISTEMA DE KEY
+local key = "DAVI2024"
+local kg = Instance.new("ScreenGui")
+kg.Parent = game:GetService("CoreGui")
+local fr = Instance.new("Frame")
+fr.Size = UDim2.new(0,300,0,150)
+fr.Position = UDim2.new(0.5,-150,0.5,-75)
+fr.BackgroundColor3 = Color3.fromRGB(30,30,40)
+fr.Parent = kg
+local lb = Instance.new("TextLabel")
+lb.Size = UDim2.new(1,0,0,30)
+lb.Text = "Digite a key:"
+lb.TextColor3 = Color3.fromRGB(255,255,255)
+lb.Parent = fr
+local bx = Instance.new("TextBox")
+bx.Size = UDim2.new(0.8,0,0,40)
+bx.Position = UDim2.new(0.1,0,0.4,0)
+bx.BackgroundColor3 = Color3.fromRGB(45,45,60)
+bx.TextColor3 = Color3.fromRGB(255,255,255)
+bx.Parent = fr
+local bt = Instance.new("TextButton")
+bt.Size = UDim2.new(0.4,0,0,40)
+bt.Position = UDim2.new(0.3,0,0.7,0)
+bt.Text = "Ativar"
+bt.BackgroundColor3 = Color3.fromRGB(255,140,0)
+bt.TextColor3 = Color3.fromRGB(255,255,255)
+bt.Parent = fr
+local err = Instance.new("TextLabel")
+err.Size = UDim2.new(0.8,0,0,25)
+err.Position = UDim2.new(0.1,0,0.85,0)
+err.Text = ""
+err.TextColor3 = Color3.fromRGB(255,100,100)
+err.BackgroundTransparency = 1
+err.TextSize = 11
+err.Parent = fr
+bt.MouseButton1Click:Connect(function()
+    if bx.Text == key then
+        kg:Destroy()
+        carregar()
+    else
+        bx.Text = ""
+        err.Text = "❌ Key inválida!"
+    end
+end)
+
+function carregar()
 local plr=game.Players.LocalPlayer
 local gui=Instance.new("ScreenGui")
 gui.Parent=plr:WaitForChild("PlayerGui")
@@ -315,3 +361,4 @@ local totalH=0
 for _,c in pairs(s:GetChildren())do if c:IsA("TextButton")or c:IsA("Frame")then totalH=totalH+48 end end
 s.CanvasSize=UDim2.new(0,0,0,totalH+30)
 print("✅ DAVI HUB - Noite 2 completo carregado!")
+end
