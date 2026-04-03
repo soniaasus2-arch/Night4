@@ -1,3 +1,9 @@
+--[[
+    DAVI HUB - Noite 2 (Completo)
+    Key: DAVI2024
+    Auto Scare: distância 60, cooldown 4.5s
+]]
+
 -- SISTEMA DE KEY
 local key = "DAVI2024"
 local kg = Instance.new("ScreenGui")
@@ -268,12 +274,12 @@ end)
 workspace.ChildAdded:Connect(function(c)
 if c.Name=="Mutant"or c.Name=="Larry"or c.Name=="Stalker"then task.wait(0.5)refreshNPC()end
 end)
--- AUTO SCARE
+-- AUTO SCARE (DISTÂNCIA 60, COOLDOWN 4.5s)
 local scareActive=false
 local scareTask=nil
 local lastScare=0
-local DIST=40
-local COOLDOWN=8
+local DIST=60
+local COOLDOWN=4.5
 local janelas={
 {posJan=Vector3.new(-292.1,82.4,-38.8),posBot=Vector3.new(-288.5,82.4,-39.6)},
 {posJan=Vector3.new(-321.9,82.4,-37.4),posBot=Vector3.new(-318.1,82.4,-40.1)},
@@ -299,8 +305,13 @@ local function scareLoop()
 while scareActive do
 task.wait(1)
 local mutant=nil
-for _,obj in pairs(workspace:GetDescendants())do if obj.Name=="Mutant"or obj.Name=="Larry"then mutant=obj break end end
-if mutant then
+for _,obj in pairs(workspace:GetDescendants())do
+if obj.Name=="Mutant"or obj.Name=="Larry"then mutant=obj break end
+end
+if not mutant then
+print("🔍 Auto Scare: Mutant não encontrado")
+goto continue
+end
 local mpos=mutant:FindFirstChild("HumanoidRootPart")and mutant.HumanoidRootPart.Position or mutant.Position
 local alvo,menor=nil,DIST+1
 for _,j in pairs(janelas)do
@@ -309,9 +320,16 @@ if d<menor then menor=d alvo=j end
 end
 if alvo and menor<=DIST and tick()-lastScare>=COOLDOWN then
 lastScare=tick()
+print("💥 Auto Scare acionado! Distância: "..menor)
 ativarLuz(alvo)
+else
+if menor>DIST then
+print("⚠️ Mutante longe ("..math.floor(menor).." > "..DIST..")")
+elseif tick()-lastScare<COOLDOWN then
+print("⏳ Cooldown: "..math.floor(COOLDOWN-(tick()-lastScare)).."s")
 end
 end
+::continue::
 end
 end
 tg("🤖 Auto Scare",false,function(s)
