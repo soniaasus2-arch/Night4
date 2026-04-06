@@ -1,4 +1,4 @@
--- DAVI HUB Noite 2 (com key)
+
 local key = "DAVI2024"
 local keyGui = Instance.new("ScreenGui")
 keyGui.Parent = game:GetService("CoreGui")
@@ -65,7 +65,6 @@ l.BackgroundTransparency = 1
 l.Font = Enum.Font.GothamBold
 l.TextSize = 16
 l.Parent = t
--- Botão minimizar
 local minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 30, 0, 30)
 minBtn.Position = UDim2.new(1, -68, 0, 2.5)
@@ -74,7 +73,6 @@ minBtn.TextSize = 20
 minBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
 minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 minBtn.Parent = t
--- Botão fechar
 local c = Instance.new("TextButton")
 c.Size = UDim2.new(0, 30, 0, 30)
 c.Position = UDim2.new(1, -35, 0, 2.5)
@@ -84,7 +82,6 @@ c.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
 c.TextColor3 = Color3.fromRGB(255, 255, 255)
 c.Parent = t
 c.MouseButton1Click:Connect(function() gui:Destroy() end)
--- Arrastar (simplificado)
 local drag = false
 local dragStart, startPos
 t.InputBegan:Connect(function(i)
@@ -101,7 +98,6 @@ game:GetService("UserInputService").InputChanged:Connect(function(i)
         f.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
--- Minimizar funcionalidade
 local minimized = false
 local scrollArea = nil
 local function getScrollArea()
@@ -231,30 +227,88 @@ tog("Fullbright", false, function(s)
         li.GlobalShadows = origLight.GlobalShadows or true
     end
 end)
--- Auto Scare
-local scareActive = false
-local lastScare = 0
-local DIST = 60
-local COOLDOWN = 4.5
-local janelas = {
-    {posJan = Vector3.new(-292.1, 82.4, -38.8), posBot = Vector3.new(-288.5, 82.4, -39.6)},
-    {posJan = Vector3.new(-321.9, 82.4, -37.4), posBot = Vector3.new(-318.1, 82.4, -40.1)},
-    {posJan = Vector3.new(-311.1, 82.4, 38.7), posBot = Vector3.new(-313.0, 82.6, 35.4)},
-    {posJan = Vector3.new(-282.0, 82.4, -111.9), posBot = Vector3.new(-278.4, 82.4, -113.3)},
-    {posJan = Vector3.new(-309.6, 82.4, -111.9), posBot = Vector3.new(-307.9, 82.4, -113.4)}}
-local function ativarLuz(jan)
-    local ch = plr.Character
-    if ch and ch.HumanoidRootPart then ch.HumanoidRootPart.CFrame = CFrame.new(jan.posBot) end
-    task.wait(0.2)
+-- ========== ESP MUTANT E STALKER (CORRIGIDO E PERSISTENTE) ==========
+local function addNPCESP(npc, cor)
+    if not npc or npc:FindFirstChild("ESP_NPC") then return end
+    local h = Instance.new("Highlight")
+    h.Name = "ESP_NPC"
+    h.FillColor = cor or Color3.fromRGB(255, 50, 50)
+    h.OutlineColor = Color3.fromRGB(255, 150, 0)
+    h.FillTransparency = 0.3
+    h.Adornee = npc
+    h.Parent = npc
+    print("✅ ESP aplicado a:", npc.Name)
+end
+local function refreshNPC()
+    -- Procura Mutant (pode estar em workspace ou ReplicatedStorage)
+    local mutant = workspace:FindFirstChild("Mutant") or workspace:FindFirstChild("Larry")
+    if mutant and not mutant:FindFirstChild("ESP_NPC") then
+        addNPCESP(mutant, Color3.fromRGB(255, 0, 0))
+    end
+    local stalker = workspace:FindFirstChild("Stalker")
+    if stalker and not stalker:FindFirstChild("ESP_NPC") then
+        addNPCESP(stalker, Color3.fromRGB(255, 100, 0))
+    end
+    -- Também procura dentro de pastas (ex: se estiver dentro de um modelo)
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("ClickDetector") and (obj.Parent.Position - jan.posBot).Magnitude < 8 then
-            fireclickdetector(obj)
-            break
+        if (obj.Name == "Mutant" or obj.Name == "Larry") and not obj:FindFirstChild("ESP_NPC") then
+            addNPCESP(obj, Color3.fromRGB(255, 0, 0))
+        elseif obj.Name == "Stalker" and not obj:FindFirstChild("ESP_NPC") then
+            addNPCESP(obj, Color3.fromRGB(255, 100, 0))
         end
     end
+end
+-- Executa a cada 2 segundos para garantir que o ESP não suma
+game:GetService("RunService").Stepped:Connect(function()
+    if tick() % 2 < 0.1 then refreshNPC() end
+end)
+-- Reage a novos objetos
+workspace.ChildAdded:Connect(function(child)
+    if child.Name == "Mutant" or child.Name == "Larry" or child.Name == "Stalker" then
+        task.wait(0.5)
+        refreshNPC()
+    end
+end)
+-- ========== AUTO SCARE CORRIGIDO ==========
+local scareActive = false
+local lastScare = 0
+local DISTANCIA = 70
+local COOLDOWN = 4.5
+local DEBUG = true
+local janelasAS = {
+    {nome="Jan1", posJan=Vector3.new(-292.1,82.4,-38.8), posBot=Vector3.new(-288.5,82.4,-39.6)},
+    {nome="Jan2", posJan=Vector3.new(-321.9,82.4,-37.4), posBot=Vector3.new(-318.1,82.4,-40.1)},
+    {nome="Jan3", posJan=Vector3.new(-311.1,82.4,38.7), posBot=Vector3.new(-313.0,82.6,35.4)},
+    {nome="Jan4", posJan=Vector3.new(-282.0,82.4,-111.9), posBot=Vector3.new(-278.4,82.4,-113.3)},
+    {nome="Jan5", posJan=Vector3.new(-309.6,82.4,-111.9), posBot=Vector3.new(-307.9,82.4,-113.4)},
+}
+local function ativarLuz(jan)
+    local ch = plr.Character
+    if not ch or not ch:FindFirstChild("HumanoidRootPart") then
+        if DEBUG then print("⚠️ Auto Scare: personagem não disponível") end
+        return
+    end
+    ch.HumanoidRootPart.CFrame = CFrame.new(jan.posBot)
+    if DEBUG then print("🔁 Auto Scare: teleportado para botão de " .. jan.nome) end
+    task.wait(0.3)
+    local clicou = false
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("ClickDetector") then
+            local parentPos = obj.Parent and obj.Parent.Position
+            if parentPos and (parentPos - jan.posBot).Magnitude < 10 then
+                fireclickdetector(obj)
+                clicou = true
+                if DEBUG then print("💡 Auto Scare: ClickDetector acionado em " .. jan.nome) end
+                break
+            end
+        end
+    end
+    if not clicou and DEBUG then
+        print("⚠️ Auto Scare: nenhum ClickDetector encontrado para " .. jan.nome)
+    end
     local fl = Instance.new("Frame")
-    fl.Size = UDim2.new(1, 0, 1, 0)
-    fl.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    fl.Size = UDim2.new(1,0,1,0)
+    fl.BackgroundColor3 = Color3.fromRGB(255,255,255)
     fl.BackgroundTransparency = 0.5
     fl.Parent = plr.PlayerGui
     task.wait(0.2)
@@ -266,22 +320,37 @@ task.spawn(function()
         if not scareActive then continue end
         local mutant = nil
         for _, obj in pairs(workspace:GetDescendants()) do
-            if obj.Name == "Mutant" or obj.Name == "Larry" then mutant = obj; break end
+            if obj.Name == "Mutant" or obj.Name == "Larry" then
+                mutant = obj
+                break
+            end
         end
-        if not mutant then continue end
+        if not mutant then
+            if DEBUG then print("🔍 Auto Scare: Mutant não encontrado") end
+            continue
+        end
         local mpos = mutant:FindFirstChild("HumanoidRootPart") and mutant.HumanoidRootPart.Position or mutant.Position
-        local alvo, menor = nil, DIST + 1
-        for _, j in pairs(janelas) do
+        local alvo, menor = nil, DISTANCIA + 1
+        for _, j in pairs(janelasAS) do
             local d = (mpos - j.posJan).Magnitude
             if d < menor then menor = d; alvo = j end
         end
-        if alvo and menor <= DIST and tick() - lastScare >= COOLDOWN then
+        if DEBUG then
+            print("📏 Auto Scare: distância do Mutante para janela mais próxima = " .. math.floor(menor))
+        end
+        if alvo and menor <= DISTANCIA and tick() - lastScare >= COOLDOWN then
             lastScare = tick()
+            if DEBUG then print("💥 Auto Scare ACIONADO! Janela: " .. alvo.nome .. " (dist " .. math.floor(menor) .. ")") end
             ativarLuz(alvo)
+        elseif DEBUG and menor > DISTANCIA then
+            print("⚠️ Auto Scare: Mutante longe (> " .. DISTANCIA .. ")")
         end
     end
 end)
-tog("Auto Scare", false, function(s) scareActive = s end)
+tog("Auto Scare", false, function(s)
+    scareActive = s
+    if DEBUG then print("Auto Scare " .. (s and "ativado" or "desativado")) end
+end)
 -- Ajustar scroll
 task.wait(0.1)
 local totalH = 0
@@ -289,5 +358,5 @@ for _, child in pairs(s:GetChildren()) do
     if child:IsA("TextButton") or child:IsA("Frame") then totalH = totalH + 48 end
 end
 s.CanvasSize = UDim2.new(0, 0, 0, totalH + 30)
-print("Hub Noite 2 carregado")
+print("✅ DAVI HUB Noite 2 carregado (ESP Mutant/Stalker corrigido)")
 end
