@@ -48,7 +48,7 @@ local plr = game.Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
 gui.Parent = plr:WaitForChild("PlayerGui")
 local f = Instance.new("Frame")
-f.Size = UDim2.new(0, 380, 0, 500)
+f.Size = UDim2.new(0, 380, 0, 520)
 f.Position = UDim2.new(0.5, -190, 0.3, 0)
 f.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 f.Parent = gui
@@ -114,7 +114,7 @@ minBtn.MouseButton1Click:Connect(function()
         f.Size = UDim2.new(0, 380, 0, 35)
         minBtn.Text = "+"
     else
-        f.Size = UDim2.new(0, 380, 0, 500)
+        f.Size = UDim2.new(0, 380, 0, 520)
         if scrollArea then scrollArea.Visible = true end
         minBtn.Text = "−"
     end
@@ -166,7 +166,7 @@ function tog(txt, def, cb)
         cb(st)
     end)
 end
--- Teleports
+-- Teleports (incluindo Safe Spot)
 btn("Rádio 1", function() plr.Character.HumanoidRootPart.CFrame = CFrame.new(-306.4, 82.4, -17.3) end)
 btn("Rádio 2", function() plr.Character.HumanoidRootPart.CFrame = CFrame.new(-246.5, 82.4, -16.5) end)
 btn("Delivery", function() plr.Character.HumanoidRootPart.CFrame = CFrame.new(-283.3, 82.4, 13.0) end)
@@ -177,6 +177,7 @@ btn("Power", function() plr.Character.HumanoidRootPart.CFrame = CFrame.new(-269.
 btn("Salão Princ", function() plr.Character.HumanoidRootPart.CFrame = CFrame.new(-294.1, 82.4, 8.4) end)
 btn("Outside", function() plr.Character.HumanoidRootPart.CFrame = CFrame.new(-157.5, 82.4, 61.4) end)
 btn("Câmeras", function() plr.Character.HumanoidRootPart.CFrame = CFrame.new(-245.9, 82.4, -15.7) end)
+btn("Safe Spot", function() plr.Character.HumanoidRootPart.CFrame = CFrame.new(-29.2, 3.0, -62.8) end)
 -- Stamina
 local staminaLoop = nil
 tog("Stamina Inf", false, function(s)
@@ -227,7 +228,7 @@ tog("Fullbright", false, function(s)
         li.GlobalShadows = origLight.GlobalShadows or true
     end
 end)
--- ========== ESP MUTANT E STALKER (CORRIGIDO E PERSISTENTE) ==========
+-- ESP Mutant e Stalker (persistente)
 local function addNPCESP(npc, cor)
     if not npc or npc:FindFirstChild("ESP_NPC") then return end
     local h = Instance.new("Highlight")
@@ -240,7 +241,6 @@ local function addNPCESP(npc, cor)
     print("✅ ESP aplicado a:", npc.Name)
 end
 local function refreshNPC()
-    -- Procura Mutant (pode estar em workspace ou ReplicatedStorage)
     local mutant = workspace:FindFirstChild("Mutant") or workspace:FindFirstChild("Larry")
     if mutant and not mutant:FindFirstChild("ESP_NPC") then
         addNPCESP(mutant, Color3.fromRGB(255, 0, 0))
@@ -249,7 +249,6 @@ local function refreshNPC()
     if stalker and not stalker:FindFirstChild("ESP_NPC") then
         addNPCESP(stalker, Color3.fromRGB(255, 100, 0))
     end
-    -- Também procura dentro de pastas (ex: se estiver dentro de um modelo)
     for _, obj in pairs(workspace:GetDescendants()) do
         if (obj.Name == "Mutant" or obj.Name == "Larry") and not obj:FindFirstChild("ESP_NPC") then
             addNPCESP(obj, Color3.fromRGB(255, 0, 0))
@@ -258,18 +257,16 @@ local function refreshNPC()
         end
     end
 end
--- Executa a cada 2 segundos para garantir que o ESP não suma
 game:GetService("RunService").Stepped:Connect(function()
     if tick() % 2 < 0.1 then refreshNPC() end
 end)
--- Reage a novos objetos
 workspace.ChildAdded:Connect(function(child)
     if child.Name == "Mutant" or child.Name == "Larry" or child.Name == "Stalker" then
         task.wait(0.5)
         refreshNPC()
     end
 end)
--- ========== AUTO SCARE CORRIGIDO ==========
+-- Auto Scare corrigido (distância 70, com logs)
 local scareActive = false
 local lastScare = 0
 local DISTANCIA = 70
@@ -336,14 +333,12 @@ task.spawn(function()
             if d < menor then menor = d; alvo = j end
         end
         if DEBUG then
-            print("📏 Auto Scare: distância do Mutante para janela mais próxima = " .. math.floor(menor))
+            print("📏 Auto Scare: distância do Mutante = " .. math.floor(menor))
         end
         if alvo and menor <= DISTANCIA and tick() - lastScare >= COOLDOWN then
             lastScare = tick()
-            if DEBUG then print("💥 Auto Scare ACIONADO! Janela: " .. alvo.nome .. " (dist " .. math.floor(menor) .. ")") end
+            if DEBUG then print("💥 Auto Scare ACIONADO! Janela: " .. alvo.nome) end
             ativarLuz(alvo)
-        elseif DEBUG and menor > DISTANCIA then
-            print("⚠️ Auto Scare: Mutante longe (> " .. DISTANCIA .. ")")
         end
     end
 end)
@@ -358,5 +353,5 @@ for _, child in pairs(s:GetChildren()) do
     if child:IsA("TextButton") or child:IsA("Frame") then totalH = totalH + 48 end
 end
 s.CanvasSize = UDim2.new(0, 0, 0, totalH + 30)
-print("✅ DAVI HUB Noite 2 carregado (ESP Mutant/Stalker corrigido)")
+print("✅ DAVI HUB Noite 2 carregado (safe spot adicionado)")
 end
