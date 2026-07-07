@@ -1,45 +1,37 @@
--- DAVI HUB - GUI COM ABAS (Arredondada e Bonita)
-print("🟢 Iniciando DAVI HUB...")
+-- ==========================================
+-- DAVI HUB - COM NOCLIP
+-- ==========================================
 
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
 local UserInputService = game:GetService("UserInputService")
-local Character = player.Character or player.CharacterAdded:Wait()
 local RS = game.ReplicatedStorage
-local Remotes = RS:FindFirstChild("Remotes")
 
 -- ============================================================
--- CRIA GUI PRINCIPAL
+-- CRIA GUI (SEM FUNDO PRETO)
 -- ============================================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "DaviHub"
 gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
 
--- Fundo escuro
-local fundo = Instance.new("Frame")
-fundo.Size = UDim2.new(1, 0, 1, 0)
-fundo.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-fundo.BackgroundTransparency = 0.4
-fundo.Parent = gui
-
--- Janela principal (arredondada)
+-- JANELA PRINCIPAL (CENTRO)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 520, 0, 550)
-mainFrame.Position = UDim2.new(0.5, -260, 0.15, 0)
+mainFrame.Size = UDim2.new(0, 480, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -240, 0.15, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 0
-mainFrame.Parent = fundo
+mainFrame.ClipsDescendants = true
+mainFrame.Parent = gui
 
--- Arredondar a janela
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 16)
 corner.Parent = mainFrame
 
--- Contorno laranja
 local border = Instance.new("UIStroke")
 border.Color = Color3.fromRGB(255, 140, 0)
 border.Thickness = 2
@@ -47,7 +39,7 @@ border.Transparency = 0.4
 border.Parent = mainFrame
 
 -- ============================================================
--- CABEÇALHO (com título, minimizar e fechar)
+-- CABEÇALHO (ARRASTÁVEL)
 -- ============================================================
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1, 0, 0, 45)
@@ -71,7 +63,7 @@ titulo.BackgroundTransparency = 1
 titulo.TextXAlignment = Enum.TextXAlignment.Left
 titulo.Parent = header
 
--- Minimizar
+-- MINIMIZAR
 local minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 32, 0, 32)
 minBtn.Position = UDim2.new(1, -70, 0, 6.5)
@@ -91,7 +83,7 @@ minCorner.Parent = minBtn
 local minimized = false
 minBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
-    mainFrame.Size = minimized and UDim2.new(0, 520, 0, 45) or UDim2.new(0, 520, 0, 550)
+    mainFrame.Size = minimized and UDim2.new(0, 480, 0, 45) or UDim2.new(0, 480, 0, 500)
     minBtn.Text = minimized and "+" or "−"
     for _, child in pairs(mainFrame:GetChildren()) do
         if child ~= header then
@@ -100,7 +92,7 @@ minBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Fechar
+-- FECHAR
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 32, 0, 32)
 closeBtn.Position = UDim2.new(1, -38, 0, 6.5)
@@ -121,26 +113,45 @@ closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
--- Arrastar
-local drag = false
-local dragStart, startPos
+-- ============================================================
+-- ARRASTAR
+-- ============================================================
+local dragging = false
+local dragInput, dragStart, startPos
+
 header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        drag = true
+        dragging = true
         dragStart = input.Position
         startPos = mainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
 end)
-header.InputEnded:Connect(function() drag = false end)
+
+header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
 UserInputService.InputChanged:Connect(function(input)
-    if drag and input.UserInputType == Enum.UserInputType.MouseMovement then
+    if dragging and input == dragInput then
         local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
     end
 end)
 
 -- ============================================================
--- CONTEÚDO (Scroll com abas)
+-- CONTEÚDO
 -- ============================================================
 local contentFrame = Instance.new("Frame")
 contentFrame.Size = UDim2.new(1, 0, 1, -45)
@@ -181,7 +192,9 @@ local abas = {
     {name = "⚡", label = "Auto"},
 }
 
--- Função para criar aba
+-- ============================================================
+-- FUNÇÃO PARA CRIAR ABA (COM SCROLL)
+-- ============================================================
 local function criarAba(nome, icone)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.85, 0, 0, 45)
@@ -199,20 +212,28 @@ local function criarAba(nome, icone)
     btnCorner.CornerRadius = UDim.new(0, 10)
     btnCorner.Parent = btn
 
-    -- Frame do conteúdo
+    -- SCROLLING FRAME
     local frame = Instance.new("ScrollingFrame")
     frame.Size = UDim2.new(1, -90, 1, 0)
     frame.Position = UDim2.new(0, 90, 0, 0)
     frame.BackgroundTransparency = 1
     frame.BorderSizePixel = 0
-    frame.ScrollBarThickness = 4
+    frame.ScrollBarThickness = 8
+    frame.ScrollBarImageColor3 = Color3.fromRGB(255, 140, 0)
+    frame.ScrollBarImageTransparency = 0.3
+    frame.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right
     frame.Visible = false
     frame.Parent = contentFrame
+    frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
     local flayout = Instance.new("UIListLayout")
     flayout.Padding = UDim.new(0, 6)
     flayout.SortOrder = Enum.SortOrder.LayoutOrder
     flayout.Parent = frame
+
+    flayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        frame.CanvasSize = UDim2.new(0, 0, 0, flayout.AbsoluteContentSize.Y + 20)
+    end)
 
     btn.MouseButton1Click:Connect(function()
         for _, b in pairs(abaButtons) do
@@ -227,6 +248,8 @@ local function criarAba(nome, icone)
             f.Visible = false
         end
         frame.Visible = true
+        task.wait(0.05)
+        frame.CanvasSize = UDim2.new(0, 0, 0, flayout.AbsoluteContentSize.Y + 20)
     end)
 
     table.insert(abaButtons, btn)
@@ -248,7 +271,7 @@ for i, aba in pairs(abas) do
 end
 
 -- ============================================================
--- FUNÇÕES AUXILIARES PARA ADICIONAR ELEMENTOS
+-- FUNÇÕES AUXILIARES
 -- ============================================================
 local function addCard(parent)
     local card = Instance.new("Frame")
@@ -256,6 +279,7 @@ local function addCard(parent)
     card.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     card.BackgroundTransparency = 0.3
     card.BorderSizePixel = 0
+    card.AutomaticSize = Enum.AutomaticSize.Y
     card.Parent = parent
 
     local cardCorner = Instance.new("UICorner")
@@ -285,7 +309,6 @@ end
 local function addButton(parent, text, callback)
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(0.95, 0, 0, 35)
-    b.Position = UDim2.new(0.025, 0, 0, 0)
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
     b.BackgroundTransparency = 0.2
@@ -293,6 +316,7 @@ local function addButton(parent, text, callback)
     b.Font = Enum.Font.Gotham
     b.TextSize = 13
     b.BorderSizePixel = 0
+    b.AutomaticSize = Enum.AutomaticSize.Y
     b.Parent = parent
 
     local bCorner = Instance.new("UICorner")
@@ -308,8 +332,8 @@ end
 local function addToggle(parent, text, callback, default)
     local c = Instance.new("Frame")
     c.Size = UDim2.new(0.95, 0, 0, 35)
-    c.Position = UDim2.new(0.025, 0, 0, 0)
     c.BackgroundTransparency = 1
+    c.AutomaticSize = Enum.AutomaticSize.Y
     c.Parent = parent
 
     local l = Instance.new("TextLabel")
@@ -351,7 +375,6 @@ end
 local function addSlider(parent, text, callback, min, max, default)
     local c = Instance.new("Frame")
     c.Size = UDim2.new(0.95, 0, 0, 50)
-    c.Position = UDim2.new(0.025, 0, 0, 0)
     c.BackgroundTransparency = 1
     c.Parent = parent
 
@@ -430,6 +453,7 @@ end
 local origLight = {}
 local staminaLoop = nil
 local o2Loop = nil
+local noclipLoop = nil  -- NOVO: Loop do Noclip
 local espPlayers = {}
 local espMonster = {}
 local scareActive = false
@@ -449,6 +473,41 @@ local currentTarget = nil
 local AIM_SPEED = 80
 local MAX_DISTANCE = 80
 local lastAimbotUpdate = 0
+
+-- ============================================================
+-- NOCLIP (NOVO)
+-- ============================================================
+local function toggleNoclip(v)
+    if noclipLoop then
+        noclipLoop:Disconnect()
+        noclipLoop = nil
+    end
+    
+    if v then
+        print("🔓 NOCLIP ATIVADO!")
+        noclipLoop = RunService.Stepped:Connect(function()
+            local char = player.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        print("🔒 NOCLIP DESATIVADO!")
+        -- Restaura a colisão
+        local char = player.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end
 
 -- ============================================================
 -- TELEPORTS
@@ -480,8 +539,9 @@ local teleportsN3 = {
 }
 
 local function teleportar(cframe)
-    if Character and Character:FindFirstChild("HumanoidRootPart") then
-        Character.HumanoidRootPart.CFrame = cframe
+    local char = player.Character or player.CharacterAdded:Wait()
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = cframe
     end
 end
 
@@ -517,9 +577,10 @@ local function toggleStamina(v)
     if v then
         staminaLoop = RunService.RenderStepped:Connect(function()
             local ch = player.Character
-            if ch and ch.Sprint then
-                if ch.Sprint.Overdrive then ch.Sprint.Overdrive.Value = 1e9 end
-                if ch.Sprint.Stamina then ch.Sprint.Stamina.Value = 100 end
+            if ch and ch:FindFirstChild("Sprint") then
+                local sprint = ch.Sprint
+                if sprint:FindFirstChild("Overdrive") then sprint.Overdrive.Value = 1e9 end
+                if sprint:FindFirstChild("Stamina") then sprint.Stamina.Value = 100 end
             end
         end)
     end
@@ -542,7 +603,7 @@ local function toggleO2(v)
                 local breath = ch:FindFirstChild("Breath")
                 if breath then
                     breath:SetAttribute("Max", 999999)
-                    breath.Value = 999999
+              breath.Value = 999999
                 end
                 local blur = Lighting:FindFirstChild("Blur")
                 if blur then blur.Enabled = false end
@@ -555,40 +616,43 @@ end
 -- NIGHT 1
 -- ============================================================
 local function RefillFireplace()
-    local OC = Character.HumanoidRootPart.CFrame
+    local char = player.Character or player.CharacterAdded:Wait()
+    local OC = char.HumanoidRootPart.CFrame
     local wp = workspace:FindFirstChild("WoodPile")
     if wp then
         local d = wp:FindFirstChild("Detector")
         if d then d.CanCollide = false end
-        Character.HumanoidRootPart.CFrame = CFrame.new(-27.149, 8.7, -118.611)
+        char.HumanoidRootPart.CFrame = CFrame.new(-27.149, 8.7, -118.611)
         task.wait(0.25)
         local cl = d and d:FindFirstChild("ClickDetector")
         if cl then fireclickdetector(cl) end
         task.wait(0.25)
-        Character.HumanoidRootPart.CFrame = CFrame.new(-45.113, 7.849, -60.241)
+        char.HumanoidRootPart.CFrame = CFrame.new(-45.113, 7.849, -60.241)
         task.wait(0.5)
-        Character.HumanoidRootPart.CFrame = OC
+        char.HumanoidRootPart.CFrame = OC
     end
 end
 
 local function GrabWood()
-    local OC = Character.HumanoidRootPart.CFrame
+    local char = player.Character or player.CharacterAdded:Wait()
+    local OC = char.HumanoidRootPart.CFrame
     local wp = workspace:FindFirstChild("WoodPile")
     if wp then
         local d = wp:FindFirstChild("Detector")
         if d then d.CanCollide = false end
-        Character.HumanoidRootPart.CFrame = CFrame.new(-27.149, 8.7, -118.611)
+        char.HumanoidRootPart.CFrame = CFrame.new(-27.149, 8.7, -118.611)
         task.wait(0.25)
         local cl = d and d:FindFirstChild("ClickDetector")
         if cl then fireclickdetector(cl) end
         task.wait(0.25)
-        Character.HumanoidRootPart.CFrame = OC
+        char.HumanoidRootPart.CFrame = OC
     end
 end
 
 local function RefillGenerator()
-    local OC = Character.HumanoidRootPart.CFrame
-    Character.HumanoidRootPart.CFrame = CFrame.new(-76.039, 4.675, -133.78)
+    local char = player.Character or player.CharacterAdded:Wait()
+    local OC = char.HumanoidRootPart.CFrame
+    char.HumanoidRootPart.CFrame = CFrame.new(-76.039, 4.675, -133.78)
     task.wait(0.25)
     local shack = workspace:FindFirstChild("Shack")
     if shack then
@@ -605,12 +669,13 @@ local function RefillGenerator()
         end
     end
     task.wait(0.5)
-    Character.HumanoidRootPart.CFrame = OC
+    char.HumanoidRootPart.CFrame = OC
 end
 
 local function GrabJerryCan()
-    local OC = Character.HumanoidRootPart.CFrame
-    Character.HumanoidRootPart.CFrame = CFrame.new(-76.039, 4.675, -133.78)
+    local char = player.Character or player.CharacterAdded:Wait()
+    local OC = char.HumanoidRootPart.CFrame
+    char.HumanoidRootPart.CFrame = CFrame.new(-76.039, 4.675, -133.78)
     task.wait(0.25)
     local shack = workspace:FindFirstChild("Shack")
     if shack then
@@ -621,7 +686,7 @@ local function GrabJerryCan()
         end
     end
     task.wait(0.25)
-    Character.HumanoidRootPart.CFrame = OC
+    char.HumanoidRootPart.CFrame = OC
 end
 
 -- ============================================================
@@ -636,9 +701,9 @@ local janelasAS = {
 }
 
 local function ativarLuz(jan)
-    local ch = player.Character
-    if not ch or not ch:FindFirstChild("HumanoidRootPart") then return end
-    ch.HumanoidRootPart.CFrame = CFrame.new(jan.posBot)
+    local char = player.Character or player.CharacterAdded:Wait()
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    char.HumanoidRootPart.CFrame = CFrame.new(jan.posBot)
     task.wait(0.3)
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj:IsA("ClickDetector") then
@@ -700,16 +765,17 @@ local function AntiVentPests()
         end
     end
 end
+
 local function ReviveN2()
-    if Remotes and Remotes:FindFirstChild("LoadCharacter") then
-        Remotes.LoadCharacter:FireServer()
+    if RS and RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("LoadCharacter") then
+        RS.Remotes.LoadCharacter:FireServer()
         task.wait(1)
     end
 end
 
 local function EscapeSnatch()
-    if Remotes and Remotes:FindFirstChild("EscapeSnatch") then
-        Remotes.EscapeSnatch:FireServer()
+    if RS and RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("EscapeSnatch") then
+        RS.Remotes.EscapeSnatch:FireServer()
     end
 end
 
@@ -787,7 +853,8 @@ local function getNearestNPC()
             if not targetPart then continue end
             local dist = (charPos - targetPart.Position).Magnitude
             if dist > MAX_DISTANCE then continue end
-            if dist < shortestDist then                shortestDist = dist
+            if dist < shortestDist then
+                shortestDist = dist
                 nearest = obj
             end
         end
@@ -810,7 +877,7 @@ RunService:BindToRenderStep("AimbotNPC", Enum.RenderPriority.Camera.Value + 1, f
                         local targetPart = currentTarget:FindFirstChild("Head") or currentTarget:FindFirstChild("HumanoidRootPart") or currentTarget:FindFirstChildWhichIsA("BasePart")
                         if targetPart then
                             local dist = (root.Position - targetPart.Position).Magnitude
-                            if dist > MAX_DISTANCE then currentTarget = getNearestNPC()
+                            if dist > MAX_DISTANCE then currentTarget = getNearestNPC() end
                         else
                             currentTarget = getNearestNPC()
                         end
@@ -838,6 +905,7 @@ RunService:BindToRenderStep("AimbotNPC", Enum.RenderPriority.Camera.Value + 1, f
         end
     end
 end)
+
 local function AutoMunicao()
     local char = player.Character or player.CharacterAdded:Wait()
     local root = char:WaitForChild("HumanoidRootPart")
@@ -975,23 +1043,17 @@ workspace.ChildAdded:Connect(function(child)
         task.wait(0.5); refreshMonsters()
     end
 end)
--- ============================================================
 -- CONSTRUÇÃO DAS ABAS
 -- ============================================================
 
--- ============================================================
 -- ABA: MENU
--- ============================================================
 local menuFrame = abaFramesMap["Menu"]
 local menuCard = addCard(menuFrame)
 addLabel(menuCard, "✦ BEM-VINDO AO DAVI HUB", Color3.fromRGB(255, 255, 255))
 addLabel(menuCard, "Selecione uma aba ao lado", Color3.fromRGB(200, 200, 200))
 addLabel(menuCard, "Versão 2.0", Color3.fromRGB(150, 150, 150))
-menuCard.Size = UDim2.new(0.92, 0, 0, 120)
 
--- ============================================================
--- ABA: CHARACTER
--- ============================================================
+-- ABA: CHARACTER (COM NOCLIP)
 local charFrame = abaFramesMap["Char"]
 local charCard = addCard(charFrame)
 addLabel(charCard, "⚡ CHARACTER")
@@ -999,6 +1061,7 @@ addToggle(charCard, "Fullbright", toggleFullbright, false)
 addToggle(charCard, "Infinite Stamina", toggleStamina, false)
 addToggle(charCard, "Anti-Frosted", toggleAntiTemp, false)
 addToggle(charCard, "Infinite O2", toggleO2, false)
+addToggle(charCard, "🔓 Noclip", toggleNoclip, false)  -- NOVO: Noclip
 addSlider(charCard, "Sprint Speed", function(v)
     local ch = player.Character
     if ch then
@@ -1007,32 +1070,24 @@ addSlider(charCard, "Sprint Speed", function(v)
         if hum then hum.WalkSpeed = v end
     end
 end, 17, 45, 17)
-charCard.Size = UDim2.new(0.92, 0, 0, 320)
 
--- ============================================================
 -- ABA: TELEPORTS
--- ============================================================
 local teleFrame = abaFramesMap["Tele"]
 local teleCard = addCard(teleFrame)
 addLabel(teleCard, "📍 NIGHT 1")
 for nome, cf in pairs(teleportsN1) do
     addButton(teleCard, nome, function() teleportar(cf) end)
 end
-
 addLabel(teleCard, "📍 NIGHT 2")
 for nome, cf in pairs(teleportsN2) do
     addButton(teleCard, nome, function() teleportar(cf) end)
 end
-
 addLabel(teleCard, "📍 NIGHT 3")
 for nome, cf in pairs(teleportsN3) do
     addButton(teleCard, nome, function() teleportar(cf) end)
 end
-teleCard.Size = UDim2.new(0.92, 0, 0, 600)
 
--- ============================================================
 -- ABA: NIGHT 1
--- ============================================================
 local n1Frame = abaFramesMap["N1"]
 local n1Card = addCard(n1Frame)
 addLabel(n1Card, "🔥 NIGHT 1")
@@ -1040,11 +1095,8 @@ addButton(n1Card, "Refill Fireplace", RefillFireplace)
 addButton(n1Card, "Grab Wood", GrabWood)
 addButton(n1Card, "Refill Generator", RefillGenerator)
 addButton(n1Card, "Grab JerryCan", GrabJerryCan)
-n1Card.Size = UDim2.new(0.92, 0, 0, 220)
 
--- ============================================================
 -- ABA: NIGHT 2
--- ============================================================
 local n2Frame = abaFramesMap["N2"]
 local n2Card = addCard(n2Frame)
 addLabel(n2Card, "🌙 NIGHT 2")
@@ -1052,11 +1104,8 @@ addToggle(n2Card, "Auto Scare", function(v) scareActive = v end, false)
 addButton(n2Card, "Anti Vent-Pests", AntiVentPests)
 addButton(n2Card, "Revive", ReviveN2)
 addButton(n2Card, "Escape Snatch", EscapeSnatch)
-n2Card.Size = UDim2.new(0.92, 0, 0, 220)
 
--- ============================================================
 -- ABA: NIGHT 3
--- ============================================================
 local n3Frame = abaFramesMap["N3"]
 local n3Card = addCard(n3Frame)
 addLabel(n3Card, "🎯 NIGHT 3")
@@ -1064,11 +1113,8 @@ addToggle(n3Card, "Ativar Aimbot", function(v) aimbotEnabled = v end, false)
 addSlider(n3Card, "Aimbot Speed", function(v) AIM_SPEED = v end, 30, 150, 80)
 addSlider(n3Card, "Aimbot Distance", function(v) MAX_DISTANCE = v end, 30, 150, 80)
 addButton(n3Card, "Auto Coletar Munição", AutoMunicao)
-n3Card.Size = UDim2.new(0.92, 0, 0, 250)
 
--- ============================================================
 -- ABA: ESP
--- ============================================================
 local espFrame = abaFramesMap["ESP"]
 local espCard = addCard(espFrame)
 addLabel(espCard, "👁️ ESP")
@@ -1077,26 +1123,20 @@ addToggle(espCard, "ESP Worker", toggleESPWorker, false)
 addToggle(espCard, "ESP WorkerHead", toggleESPWorkerHead, false)
 addToggle(espCard, "ESP All NPCs", toggleESPAllNPCs, false)
 addLabel(espCard, "ESP Monsters (Auto)", Color3.fromRGB(200, 200, 200))
-espCard.Size = UDim2.new(0.92, 0, 0, 260)
 
--- ============================================================
 -- ABA: AUTO
--- ============================================================
 local autoFrame = abaFramesMap["Auto"]
 local autoCard = addCard(autoFrame)
 addLabel(autoCard, "⚡ AUTO")
 addToggle(autoCard, "Auto Safe Spot", startAutoSafe, false)
-autoCard.Size = UDim2.new(0.92, 0, 0, 120)
+
 -- ============================================================
--- AJUSTE DOS SCROLLS
+-- FORÇA ATUALIZAÇÃO DO SCROLL
 -- ============================================================
-task.wait(0.1)
+task.wait(0.5)
 for _, frame in pairs(abaFrames) do
-    local totalH = 0
-    for _, child in pairs(frame:GetChildren()) do
-        if child:IsA("Frame") or child:IsA("TextButton") or child:IsA("TextLabel") then
-            totalH = totalH + 48
-        end
+    local flayout = frame:FindFirstChildWhichIsA("UIListLayout")
+    if flayout then
+        frame.CanvasSize = UDim2.new(0, 0, 0, flayout.AbsoluteContentSize.Y + 20)
     end
-    frame.CanvasSize = UDim2.new(0, 0, 0, totalH + 20)
 end
