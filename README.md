@@ -1,1 +1,1287 @@
+local player = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local RS = game.ReplicatedStorage
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 
+-- ============================================================
+-- SISTEMA DE KEY (VALIDAÇÃO VIA PASTEBIN)
+-- ============================================================
+
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1524546983799427194/WyTosfrV6Opc1MPOpmTJmYNlCzBu0gpRSJ89dUnqcNVYbqJ373-tCfTLUMBgOTidUEh3"
+local PASTEBIN_URL = "https://pastebin.com/raw/rFhbk945"
+local VIP_DEV_KEY = "Exp,ri?me?ntd?ave123191717172827181"
+
+local keyValidada = false
+
+-- Tabela de expiração das keys
+local EXPIRACAO_KEYS = {
+    ["free_10182alapapqaoqkfa"] = "31/12/2025",
+    ["free_20394blbqbqbrbrlsb"] = "31/12/2025",
+    ["free_30567cmcrcrcscsmtc"] = "31/12/2025",
+    ["free_40821dndsdtdudunud"] = "31/12/2025",
+    ["free_50943eoeuevevevove"] = "31/12/2025",
+    ["free_61054fpfwfwfwfwpwf"] = "31/12/2025",
+    ["free_71265gqgxgxgxgxqgx"] = "31/12/2025",
+    ["free_81376hrhyhyhyhyrhy"] = "31/12/2025",
+    ["free_91487isizizizizsiz"] = "31/12/2025",
+    ["free_101598jtjajajajataj"] = "31/12/2025",
+}
+
+local function isKeyExpirada(key)
+    local dataExp = EXPIRACAO_KEYS[key]
+    if not dataExp then return true end
+    local dia, mes, ano = dataExp:match("(%d+)/(%d+)/(%d+)")
+    if not dia then return true end
+    local expiraTimestamp = os.time({
+        day = tonumber(dia),
+        month = tonumber(mes),
+        year = tonumber(ano),
+        hour = 23, min = 59, sec = 59
+    })
+    return os.time() > expiraTimestamp
+end
+
+local function baixarListaKeys()
+    local sucesso, conteudo = pcall(function()
+        return game:HttpGet(PASTEBIN_URL)
+    end)
+    if sucesso and conteudo then
+        local keys = {}
+        for key in string.gmatch(conteudo, "%S+") do
+            if key ~= "" then keys[key] = true end
+        end
+        return keys
+    end
+    return nil
+end
+
+local function autoSaveKey(key)
+    if key and key ~= "" then
+        player:SetAttribute("DAVI_KEY_ATIVADA", key)
+        player:SetAttribute("DAVI_KEY_DATA", os.date("%d/%m/%Y %H:%M:%S"))
+        print("💾 Key salva: " .. key)
+    end
+end
+
+local function verificarKeySalva()
+    local keySalva = player:GetAttribute("DAVI_KEY_ATIVADA")
+    if not keySalva then return false end
+    if isKeyExpirada(keySalva) then
+        print("⏰ KEY EXPIRADA!")
+        player:SetAttribute("DAVI_KEY_ATIVADA", nil)
+        return false
+    end
+    local keysOnline = baixarListaKeys()
+    if keysOnline and not keysOnline[keySalva] then
+        print("❌ KEY REVOGADA!")
+        player:SetAttribute("DAVI_KEY_ATIVADA", nil)
+        return false
+    end
+    return true
+end
+
+local function verificarKey(key)
+    if key == VIP_DEV_KEY then
+        return true, "KEY VIP DE DESENVOLVEDOR!"
+    end
+    if isKeyExpirada(key) then
+        return false, "⏰ KEY EXPIRADA!"
+    end
+    local keysOnline = baixarListaKeys()
+    if keysOnline then
+        if keysOnline[key] then
+            autoSaveKey(key)
+            return true, "KEY VÁLIDA!"
+        else
+            return false, "KEY INVÁLIDA OU REVOGADA!"
+        end
+    else
+        return false, "ERRO AO VALIDAR KEY!"
+    end
+end
+
+local function statusKey()
+    local key = player:GetAttribute("DAVI_KEY_ATIVADA")
+    if not key then
+        print("❌ Nenhuma key ativada.")
+        return
+    end
+    local data = player:GetAttribute("DAVI_KEY_DATA")
+    local expirada = isKeyExpirada(key)
+    print("=== STATUS DA KEY ===")
+    print("🔑 Key: " .. key)
+    print("📅 Ativada em: " .. (data or "N/A"))
+    print(expirada and "⏰ Status: EXPIRADA!" or "✅ Status: VÁLIDA")
+    print("======================")
+end
+
+-- ============================================================
+-- SISTEMA DE IDIOMAS
+-- ============================================================
+
+local IDIOMAS = {
+    pt = {
+        nome = "Português",
+        main = "PRINCIPAL",
+        menu = "MENU",
+        tele = "TELEPORTES",
+        n1 = "NOITE 1",
+        n2 = "NOITE 2",
+        n3 = "NOITE 3",
+        esp = "ESP",
+        geral = "GERAL",
+        config = "CONFIGURAÇÕES",
+        fullbright = "Fullbright",
+        stamina = "Stamina Infinita",
+        antifrost = "Anti-Frosted",
+        o2 = "O2 Infinito",
+        noclip = "Noclip",
+        sprint = "Velocidade da Sprint",
+        feedback = "Enviar Feedback",
+        usuarios = "Ver Usuários do HUB",
+        autoscare = "Auto Scare",
+        antivent = "Anti Vent",
+        revive = "Reviver",
+        escapesnatch = "Escape Snatch",
+        refillpower = "Recarregar Energia",
+        antistalker = "Anti Stalker",
+        aimbot = "Ativar Aimbot",
+        aimspeed = "Velocidade do Aimbot",
+        aimdist = "Distância do Aimbot",
+        municao = "Auto Coletar Munição",
+        esp_players = "ESP Players",
+        esp_larry = "ESP Larry",
+        esp_stalker = "ESP Stalker",
+        esp_zombie = "ESP Zumbis & Esqueletos",
+        bypass = "Bypass Anti-Cheat",
+        static = "Desabilitar Estática",
+        notifier = "Notificador",
+        salvar = "Salvar Configurações",
+        carregar = "Carregar Configurações",
+        autoload = "Auto Load",
+        idioma = "Idioma",
+        config_salvas = "As configurações são salvas em:",
+        arquivo_config = "DAVI_HUB_Config.json",
+        bemvindo = "Bem-vindo ao DAVI HUB",
+        selecione = "Selecione uma aba ao lado",
+        versao = "Versão 2.0",
+        idioma_alterado = "Idioma alterado para: ",
+        status_key = "🔑 Status da Key",
+    },
+    en = {
+        nome = "English",
+        main = "MAIN",
+        menu = "MENU",
+        tele = "TELEPORTS",
+        n1 = "NIGHT 1",
+        n2 = "NIGHT 2",
+        n3 = "NIGHT 3",
+        esp = "ESP",
+        geral = "GENERAL",
+        config = "SETTINGS",
+        fullbright = "Fullbright",
+        stamina = "Infinite Stamina",
+        antifrost = "Anti-Frosted",
+        o2 = "Infinite O2",
+        noclip = "Noclip",
+        sprint = "Sprint Speed",
+        feedback = "Send Feedback",
+        usuarios = "View HUB Users",
+        autoscare = "Auto Scare",
+        antivent = "Anti Vent",
+        revive = "Revive",
+        escapesnatch = "Escape Snatch",
+        refillpower = "Refill Power",
+        antistalker = "Anti Stalker",
+        aimbot = "Enable Aimbot",
+        aimspeed = "Aimbot Speed",
+        aimdist = "Aimbot Distance",
+        municao = "Auto Collect Ammo",
+        esp_players = "ESP Players",
+        esp_larry = "ESP Larry",
+        esp_stalker = "ESP Stalker",
+        esp_zombie = "ESP Zombies & Skeletons",
+        bypass = "Bypass Anti-Cheat",
+        static = "Disable Static",
+        notifier = "Notifier",
+        salvar = "Save Settings",
+        carregar = "Load Settings",
+        autoload = "Auto Load",
+        idioma = "Language",
+        config_salvas = "Settings are saved at:",
+        arquivo_config = "DAVI_HUB_Config.json",
+        bemvindo = "Welcome to DAVI HUB",
+        selecione = "Select a tab on the side",
+        versao = "Version 2.0",
+        idioma_alterado = "Language changed to: ",
+        status_key = "🔑 Key Status",
+    }
+}
+
+local idiomaAtual = "pt"
+local listaIdiomas = {
+    {nome = "Português (BR)", codigo = "pt"},
+    {nome = "English", codigo = "en"},
+}
+
+local function t(chave)
+    if IDIOMAS[idiomaAtual] and IDIOMAS[idiomaAtual][chave] then
+        return IDIOMAS[idiomaAtual][chave]
+    end
+    return chave
+end
+
+-- ============================================================
+-- SISTEMA DE CONFIGURAÇÕES
+-- ============================================================
+
+local configs = {
+    idioma = "pt",
+    noclip = false,
+    fullbright = false,
+    stamina = false,
+    antifrost = false,
+    o2 = false,
+    aimbot = false,
+    autoscare = false,
+    esp_players = false,
+    esp_larry = false,
+    esp_stalker = false,
+    esp_zombie = false,
+    notifier = false,
+    sprint_speed = 17,
+    aim_speed = 80,
+    aim_distance = 80,
+    autoload = true,
+    antivent = false,
+    revive = false,
+    escapesnatch = false,
+    refillpower = false,
+    antistalker = false,
+    municao = false,
+    bypass = false,
+    static = false,
+}
+
+local function salvarConfiguracoes()
+    local dados = {
+        idioma = idiomaAtual,
+        noclip = configs.noclip,
+        fullbright = configs.fullbright,
+        stamina = configs.stamina,
+        antifrost = configs.antifrost,
+        o2 = configs.o2,
+        aimbot = configs.aimbot,
+        autoscare = configs.autoscare,
+        esp_players = configs.esp_players,
+        esp_larry = configs.esp_larry,
+        esp_stalker = configs.esp_stalker,
+        esp_zombie = configs.esp_zombie,
+        notifier = configs.notifier,
+        sprint_speed = configs.sprint_speed,
+        aim_speed = configs.aim_speed,
+        aim_distance = configs.aim_distance,
+        autoload = configs.autoload,
+        antivent = configs.antivent,
+        revive = configs.revive,
+        escapesnatch = configs.escapesnatch,
+        refillpower = configs.refillpower,
+        antistalker = configs.antistalker,
+        municao = configs.municao,
+        bypass = configs.bypass,
+        static = configs.static,
+    }
+    local json = HttpService:JSONEncode(dados)
+    pcall(function()
+        writefile("DAVI_HUB_Config.json", json)
+        print("💾 Configurações salvas!")
+    end)
+end
+
+local function carregarConfiguracoes()
+    local sucesso, dados = pcall(function()
+        return readfile("DAVI_HUB_Config.json")
+    end)
+    if sucesso and dados then
+        local config = HttpService:JSONDecode(dados)
+        idiomaAtual = config.idioma or "pt"
+        configs.noclip = config.noclip or false
+        configs.fullbright = config.fullbright or false
+        configs.stamina = config.stamina or false
+        configs.antifrost = config.antifrost or false
+        configs.o2 = config.o2 or false
+        configs.aimbot = config.aimbot or false
+        configs.autoscare = config.autoscare or false
+        configs.esp_players = config.esp_players or false
+        configs.esp_larry = config.esp_larry or false
+        configs.esp_stalker = config.esp_stalker or false
+        configs.esp_zombie = config.esp_zombie or false
+        configs.notifier = config.notifier or false
+        configs.sprint_speed = config.sprint_speed or 17
+        configs.aim_speed = config.aim_speed or 80
+        configs.aim_distance = config.aim_distance or 80
+        configs.autoload = (config.autoload == nil and true) or config.autoload
+        configs.antivent = config.antivent or false
+        configs.revive = config.revive or false
+        configs.escapesnatch = config.escapesnatch or false
+        configs.refillpower = config.refillpower or false
+        configs.antistalker = config.antistalker or false
+        configs.municao = config.municao or false
+        configs.bypass = config.bypass or false
+        configs.static = config.static or false
+        print("📂 Configurações carregadas!")
+        return true
+    else
+        return false
+    end
+end
+
+if configs.autoload then
+    carregarConfiguracoes()
+end
+
+-- ============================================================
+-- SISTEMA DE IDENTIFICAÇÃO DE USUÁRIOS
+-- ============================================================
+
+local function identificarUsuarios()
+    local usuarios = {}
+    for _, jogador in pairs(game.Players:GetPlayers()) do
+        if jogador ~= player then
+            pcall(function()
+                local playerGui = jogador:FindFirstChild("PlayerGui")
+                if playerGui then
+                    for _, gui in pairs(playerGui:GetChildren()) do
+                        if gui:IsA("ScreenGui") then
+                            local nome = gui.Name:lower()
+                            if nome:find("davi") or nome:find("hub") or nome:find("davihub") then
+                                table.insert(usuarios, {
+                                    nome = jogador.Name,
+                                    userId = jogador.UserId,
+                                    gui = gui.Name
+                                })
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+    return usuarios
+end
+
+local function mostrarUsuariosConsole()
+    local usuarios = identificarUsuarios()
+    print("")
+    print("===== USUARIOS DO DAVI HUB NO SERVIDOR =====")
+    if #usuarios == 0 then
+        print("Nenhum outro usuario do DAVI HUB encontrado.")
+    else
+        print("Total de usuarios: " .. #usuarios)
+        for i, usuario in pairs(usuarios) do
+            print(i .. ". " .. usuario.nome .. " (ID: " .. usuario.userId .. ")")
+        end
+    end
+    print("================================================")
+end
+
+local function criarGUIUsuarios()
+    for _, v in pairs(player.PlayerGui:GetChildren()) do
+        if v.Name == "UsuariosDAVI" then v:Destroy() end
+    end
+
+    local usuarios = identificarUsuarios()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "UsuariosDAVI"
+    gui.Parent = player.PlayerGui
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+
+    local fundo = Instance.new("Frame")
+    fundo.Size = UDim2.new(1, 0, 1, 0)
+    fundo.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    fundo.BackgroundTransparency = 0.5
+    fundo.Parent = gui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 350, 0, 300)
+    frame.Position = UDim2.new(0.5, -175, 0.5, -150)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+    frame.BackgroundTransparency = 0.05
+    frame.BorderSizePixel = 0
+    frame.ClipsDescendants = true
+    frame.Parent = fundo
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 16)
+    corner.Parent = frame
+
+    local border = Instance.new("UIStroke")
+    border.Color = Color3.fromRGB(255, 140, 0)
+    border.Thickness = 2
+    border.Transparency = 0.3
+    border.Parent = frame
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 45)
+    title.Text = "USUARIOS DO DAVI HUB"
+    title.TextColor3 = Color3.fromRGB(255, 200, 50)
+    title.TextSize = 18
+    title.Font = Enum.Font.GothamBold
+    title.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+    title.BackgroundTransparency = 0.15
+    title.Parent = frame
+
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 16)
+    titleCorner.Parent = title
+
+    local close = Instance.new("TextButton")
+    close.Size = UDim2.new(0, 30, 0, 30)
+    close.Position = UDim2.new(1, -38, 0, 7)
+    close.Text = "X"
+    close.TextColor3 = Color3.fromRGB(255, 255, 255)
+    close.TextSize = 18
+    close.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+    close.BackgroundTransparency = 0.3
+    close.BorderSizePixel = 0
+    close.Parent = title
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 8)
+    closeCorner.Parent = close
+    close.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+    local lista = Instance.new("ScrollingFrame")
+    lista.Size = UDim2.new(1, -20, 1, -80)
+    lista.Position = UDim2.new(0, 10, 0, 55)
+    lista.BackgroundTransparency = 1
+    lista.BorderSizePixel = 0
+    lista.ScrollBarThickness = 6
+    lista.ScrollBarImageColor3 = Color3.fromRGB(255, 140, 0)
+    lista.Parent = frame
+
+    local listaLayout = Instance.new("UIListLayout")
+    listaLayout.Padding = UDim.new(0, 4)
+    listaLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listaLayout.Parent = lista
+
+    local contador = Instance.new("TextLabel")
+    contador.Size = UDim2.new(1, 0, 0, 25)
+    contador.Position = UDim2.new(0, 0, 1, -35)
+    contador.Text = "Total: " .. #usuarios .. " usuario(s)"
+    contador.TextColor3 = Color3.fromRGB(200, 200, 200)
+    contador.TextSize = 14
+    contador.Font = Enum.Font.Gotham
+    contador.BackgroundTransparency = 1
+    contador.Parent = frame
+
+    if #usuarios == 0 then
+        local nenhum = Instance.new("TextLabel")
+        nenhum.Size = UDim2.new(1, 0, 0, 35)
+        nenhum.Text = "Nenhum outro usuario do DAVI HUB encontrado."
+        nenhum.TextColor3 = Color3.fromRGB(200, 200, 200)
+        nenhum.TextSize = 14
+        nenhum.Font = Enum.Font.Gotham
+        nenhum.BackgroundTransparency = 1
+        nenhum.Parent = lista
+    else
+        for _, usuario in pairs(usuarios) do
+            local item = Instance.new("TextLabel")
+            item.Size = UDim2.new(1, 0, 0, 30)
+            item.Text = usuario.nome
+            item.TextColor3 = Color3.fromRGB(255, 255, 255)
+            item.TextSize = 14
+            item.Font = Enum.Font.GothamBold
+            item.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+            item.BackgroundTransparency = 0.2
+            item.BorderSizePixel = 0
+            item.Parent = lista
+            local itemCorner = Instance.new("UICorner")
+            itemCorner.CornerRadius = UDim.new(0, 6)
+            itemCorner.Parent = item
+        end
+    end
+
+    task.wait(0.1)
+    lista.CanvasSize = UDim2.new(0, 0, 0, #usuarios * 34 + 50)
+end
+
+game:GetService("Players").LocalPlayer.Chatted:Connect(function(msg)
+    if msg:lower() == "/davi" or msg:lower() == "/hub" then
+        criarGUIUsuarios()
+        mostrarUsuariosConsole()
+    end
+end)
+-- ============================================================
+-- SISTEMA DE NOTIFICAÇÕES
+-- ============================================================
+
+local function showNotification(text, cor)
+    cor = cor or Color3.fromRGB(50, 50, 50)
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "Notificacao"
+    gui.Parent = player.PlayerGui
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 350, 0, 45)
+    frame.Position = UDim2.new(1, -370, 0.05, 0)
+    frame.BackgroundColor3 = cor
+    frame.BackgroundTransparency = 0.15
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 12)
+    frameCorner.Parent = frame
+    local border = Instance.new("UIStroke")
+    border.Color = Color3.fromRGB(255, 140, 0)
+    border.Thickness = 1
+    border.Transparency = 0.3
+    border.Parent = frame
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -20, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.Font = Enum.Font.Gotham
+    label.BackgroundTransparency = 1
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+    local fadeOut = TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {BackgroundTransparency = 1})
+    local fadeLabel = TweenService:Create(label, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {TextTransparency = 1})
+    task.wait(3)
+    fadeOut:Play()
+    fadeLabel:Play()
+    task.wait(0.5)
+    gui:Destroy()
+end
+
+-- ============================================================
+-- SISTEMA DE FEEDBACK
+-- ============================================================
+
+local function enviarFeedback(categoria, mensagem)
+    if not mensagem or mensagem == "" then
+        showNotification("❌ Digite uma mensagem!", Color3.fromRGB(200, 0, 0))
+        return
+    end
+
+    local data = {
+        content = string.format(
+            "**📝 NOVO FEEDBACK DO DAVI HUB**\n" ..
+            "**👤 Usuário:** %s (%s)\n" ..
+            "**📂 Categoria:** %s\n" ..
+            "**💬 Mensagem:** %s\n" ..
+            "**🕐 Data:** %s",
+            player.Name,
+            player.UserId,
+            categoria or "Sem categoria",
+            mensagem,
+            os.date("%d/%m/%Y %H:%M:%S")
+        )
+    }
+
+    local jsonData = HttpService:JSONEncode(data)
+    local headers = {
+        ["Content-Type"] = "application/json"
+    }
+
+    pcall(function()
+        local response = request({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = headers,
+            Body = jsonData
+        })
+        if response and response.StatusCode == 204 then
+            showNotification("✅ Feedback enviado com sucesso!", Color3.fromRGB(0, 200, 0))
+        else
+            showNotification("❌ Erro ao enviar feedback!", Color3.fromRGB(200, 0, 0))
+        end
+    end)
+end
+
+-- ============================================================
+-- NOTIFICADOR (TOGGLE ON/OFF)
+-- ============================================================
+
+local notifierActive = false
+local notifierConnections = {}
+
+local function iniciarNotificador()
+    if notifierActive then return end
+    notifierActive = true
+    print("🔔 Notificador ATIVADO!")
+    local function onChildAdded(child)
+        if not notifierActive then return end
+        if child.Name == "Larry" then
+            showNotification("Larry apareceu!", Color3.fromRGB(200, 50, 50))
+        elseif child.Name == "Mutant" then
+            showNotification("Mutant apareceu!", Color3.fromRGB(150, 50, 200))
+        elseif child.Name == "Worker" then
+            showNotification("Worker apareceu!", Color3.fromRGB(50, 150, 200))
+        elseif child.Name == "WorkerHead" then
+            showNotification("WorkerHead apareceu!", Color3.fromRGB(50, 200, 150))
+        end
+    end
+    local function onChildRemoved(child)
+        if not notifierActive then return end
+        if child.Name == "Larry" then
+            showNotification("Larry desapareceu!", Color3.fromRGB(50, 200, 50))
+        elseif child.Name == "Mutant" then
+            showNotification("Mutant desapareceu!", Color3.fromRGB(50, 200, 50))
+        elseif child.Name == "Worker" then
+            showNotification("Worker desapareceu!", Color3.fromRGB(50, 200, 50))
+        elseif child.Name == "WorkerHead" then
+            showNotification("WorkerHead desapareceu!", Color3.fromRGB(50, 200, 50))
+        end
+    end
+    local conn1 = workspace.ChildAdded:Connect(onChildAdded)
+    local conn2 = workspace.ChildRemoved:Connect(onChildRemoved)
+    table.insert(notifierConnections, conn1)
+    table.insert(notifierConnections, conn2)
+    task.wait(1)
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            if obj.Name == "Larry" then
+                showNotification("Larry esta aqui!", Color3.fromRGB(200, 50, 50))
+            elseif obj.Name == "Mutant" then
+                showNotification("Mutant esta aqui!", Color3.fromRGB(150, 50, 200))
+            elseif obj.Name == "Worker" then
+                showNotification("Worker esta aqui!", Color3.fromRGB(50, 150, 200))
+            elseif obj.Name == "WorkerHead" then
+                showNotification("WorkerHead esta aqui!", Color3.fromRGB(50, 200, 150))
+            end
+        end
+    end
+end
+
+local function desativarNotificador()
+    if not notifierActive then return end
+    notifierActive = false
+    for _, conn in pairs(notifierConnections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    notifierConnections = {}
+    print("🔕 Notificador DESATIVADO!")
+end
+
+-- ============================================================
+-- SISTEMA DE ESP
+-- ============================================================
+
+local espObjects = {}
+
+local function createESP(part, color, text)
+    local billboard = Instance.new("BillboardGui")
+    billboard.Size = UDim2.new(0, 100, 0, 30)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.Adornee = part
+    billboard.Parent = part
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text or "ESP"
+    label.TextColor3 = color or Color3.fromRGB(255, 0, 0)
+    label.TextSize = 14
+    label.Font = Enum.Font.GothamBold
+    label.TextStrokeTransparency = 0.5
+    label.Parent = billboard
+
+    return billboard
+end
+
+local function updateESP()
+    -- Limpar ESP antigo
+    for _, obj in pairs(espObjects) do
+        if obj and obj.Parent then
+            obj:Destroy()
+        end
+    end
+    espObjects = {}
+
+    if not configs.esp_players and not configs.esp_larry and 
+       not configs.esp_stalker and not configs.esp_zombie then
+        return
+    end
+
+    -- ESP para jogadores
+    if configs.esp_players then
+        for _, jogador in ipairs(Players:GetPlayers()) do
+            if jogador ~= player and jogador.Character then
+                local root = jogador.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    local esp = createESP(root, Color3.fromRGB(0, 255, 0), jogador.Name)
+                    table.insert(espObjects, esp)
+                end
+            end
+        end
+    end
+
+    -- ESP para Larry, Stalker, Zombies e Skeletons
+    local targets = {
+        Larry = {name = "Larry", color = Color3.fromRGB(255, 0, 0), enabled = "esp_larry"},
+        Stalker = {name = "Stalker", color = Color3.fromRGB(255, 165, 0), enabled = "esp_stalker"},
+        Zombie = {name = "Zombie", color = Color3.fromRGB(0, 255, 0), enabled = "esp_zombie"},
+        Skeleton = {name = "Skeleton", color = Color3.fromRGB(0, 255, 0), enabled = "esp_zombie"}
+    }
+
+    for _, target in pairs(targets) do
+        if configs[target.enabled] then
+            for _, part in ipairs(Workspace:GetDescendants()) do
+                if part:IsA("Model") and part.Name == target.name then
+                    local root = part:FindFirstChild("HumanoidRootPart") or part:FindFirstChild("Head")
+                    if root then
+                        local esp = createESP(root, target.color, target.name)
+                        table.insert(espObjects, esp)
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Atualizar ESP periodicamente
+RunService.Heartbeat:Connect(updateESP)
+
+-- ============================================================
+-- SISTEMA DE AIMBOT
+-- ============================================================
+
+local function getClosestTarget()
+    local nearest = nil
+    local nearestDist = math.huge
+
+    if not player.Character then return nil end
+    local root = player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+
+    for _, jogador in ipairs(Players:GetPlayers()) do
+        if jogador ~= player and jogador.Character then
+            local targetRoot = jogador.Character:FindFirstChild("HumanoidRootPart")
+            if targetRoot then
+                local dist = (targetRoot.Position - root.Position).Magnitude
+                if dist < configs.aim_distance and dist < nearestDist then
+                    nearest = jogador
+                    nearestDist = dist
+                end
+            end
+        end
+    end
+
+    return nearest
+end
+
+RunService.Heartbeat:Connect(function()
+    if not configs.aimbot then return end
+
+    local target = getClosestTarget()
+    if target and target.Character then
+        local head = target.Character:FindFirstChild("Head")
+        if head then
+            local targetPos = head.Position
+            local cameraPos = Camera.CFrame.Position
+            local direction = (targetPos - cameraPos).unit
+            local newCFrame = CFrame.new(cameraPos, cameraPos + direction)
+
+            local currentCFrame = Camera.CFrame
+            local lerpFactor = configs.aim_speed / 100
+            local smoothCFrame = currentCFrame:Lerp(newCFrame, lerpFactor)
+            Camera.CFrame = smoothCFrame
+        end
+    end
+end)
+
+-- ============================================================
+-- FUNÇÕES DO JOGO
+-- ============================================================
+
+local noclipLoop = nil
+local function toggleNoclip(v)
+    if noclipLoop then noclipLoop:Disconnect(); noclipLoop = nil end
+    if v then
+        noclipLoop = RunService.Stepped:Connect(function()
+            local char = player.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+            end
+        end)
+    else
+        local char = player.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = true end
+            end
+        end
+    end
+end
+
+local origLight = {}
+local function toggleFullbright(v)
+    local li = Lighting
+    if v then
+        origLight = {Ambient = li.Ambient, OutdoorAmbient = li.OutdoorAmbient, Brightness = li.Brightness, GlobalShadows = li.GlobalShadows, FogEnd = li.FogEnd}
+        li.Ambient = Color3.fromRGB(255,255,255)
+        li.OutdoorAmbient = Color3.fromRGB(255,255,255)
+        li.Brightness = 2
+        li.GlobalShadows = false
+        li.FogEnd = 100000
+    else
+        li.Ambient = origLight.Ambient or Color3.fromRGB(128,128,128)
+        li.OutdoorAmbient = origLight.OutdoorAmbient or Color3.fromRGB(128,128,128)
+        li.Brightness = origLight.Brightness or 1
+        li.GlobalShadows = origLight.GlobalShadows or true
+        li.FogEnd = origLight.FogEnd or 1000
+    end
+end
+
+local staminaLoop = nil
+local function toggleStamina(v)
+    if staminaLoop then staminaLoop:Disconnect(); staminaLoop = nil end
+    if v then
+        staminaLoop = RunService.RenderStepped:Connect(function()
+            local ch = player.Character
+            if ch and ch:FindFirstChild("Sprint") then
+                local sprint = ch.Sprint
+                if sprint:FindFirstChild("Overdrive") then sprint.Overdrive.Value = 1e9 end
+                if sprint:FindFirstChild("Stamina") then sprint.Stamina.Value = 100 end
+            end
+        end)
+    end
+end
+
+local function toggleAntiTemp(v)
+    local ch = player.Character
+    if ch then
+        local temp = ch:FindFirstChild("Temperature")
+        if temp then temp.Enabled = not v end
+    end
+end
+
+local o2Loop = nil
+local function toggleO2(v)
+    if o2Loop then o2Loop:Disconnect(); o2Loop = nil end
+    if v then
+        o2Loop = RunService.RenderStepped:Connect(function()
+            local ch = player.Character
+            if ch then
+                local breath = ch:FindFirstChild("Breath")
+                if breath then breath:SetAttribute("Max",999999); breath.Value = 999999 end
+                local blur = Lighting:FindFirstChild("Blur")
+                if blur then blur.Enabled = false end
+            end
+        end)
+    end
+end
+
+-- ============================================================
+-- TELEPORTS
+-- ============================================================
+
+local teleportsN1 = {
+    ["Ladder"] = CFrame.new(-0.173,9.3,-81.32),
+    ["Generator"] = CFrame.new(-79.722,4.675,-131.918),
+    ["Entrance"] = CFrame.new(-11.036,7.73,-31.822),
+    ["LivingRoom"] = CFrame.new(-34.962,8.05,-47.153),
+    ["Bedroom"] = CFrame.new(-32.645,23.8,-72.845),
+}
+
+local teleportsN2 = {
+    ["SafeSpot N2"] = CFrame.new(-339.321,82.4,-40.622),
+    ["DeliveryBoard"] = CFrame.new(-282.224,82.4,14.674),
+    ["Main"] = CFrame.new(-304.235,82.4,-6.777),
+    ["Corridor1"] = CFrame.new(-303.846,82.4,50.169),
+    ["Entrance2"] = CFrame.new(-217.417,82.4,65.412),
+    ["Corridor2"] = CFrame.new(-293.11,82.4,-89.501),
+}
+
+local teleportsN3 = {
+    ["Cabana 1"] = CFrame.new(99.8,4.5,-247.2),
+    ["Cabana 2"] = CFrame.new(-36.9,4.5,68.7),
+    ["Cabana 3"] = CFrame.new(-31.7,4.5,268.8),
+    ["Cabana 4"] = CFrame.new(233.6,4.5,245.8),
+    ["Cutscene Room"] = CFrame.new(-237,-22.5,107),
+    ["Safe Spot N3"] = CFrame.new(194,38.7,-217.4),
+    ["Lodge"] = CFrame.new(-226.8,17.4,103.7),
+    ["Jeffry Canna"] = CFrame.new(177.5,4.3,197.9),
+}
+
+local function teleportar(cframe)
+    local char = player.Character or player.CharacterAdded:Wait()
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = cframe
+    end
+end
+
+-- ============================================================
+-- LOOP PRINCIPAL PARA TODAS AS FUNÇÕES
+-- ============================================================
+
+RunService.Heartbeat:Connect(function()
+    local char = player.Character
+    if not char then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid then return end
+
+    -- Auto Scare
+    if configs.autoscare then
+        local larry = workspace:FindFirstChild("Larry")
+        if larry and larry:FindFirstChild("Humanoid") then
+            local larryHumanoid = larry.Humanoid
+            if larryHumanoid.Health > 0 then
+                local scareEvent = RS:FindFirstChild("ScareEvent")
+                if scareEvent then
+                    pcall(function() scareEvent:FireServer() end)
+                end
+            end
+        end
+    end
+
+    -- Anti Vent
+    if configs.antivent then
+        local wind = char:FindFirstChild("Wind")
+        if wind then wind:Destroy() end
+    end
+
+    -- Revive
+    if configs.revive then
+        if humanoid.Health <= 0 then
+            local reviveEvent = RS:FindFirstChild("Revive")
+            if reviveEvent then
+                pcall(function() reviveEvent:FireServer() end)
+            end
+        end
+    end
+
+    -- Escape Snatch
+    if configs.escapesnatch then
+        local snatch = char:FindFirstChild("Snatch")
+        if snatch then snatch:Destroy() end
+    end
+
+    -- Refill Power
+    if configs.refillpower then
+        local power = char:FindFirstChild("Power")
+        if power then
+            pcall(function() power.Value = 100 end)
+        end
+    end
+
+    -- Anti Stalker
+    if configs.antistalker then
+        for _, stalker in pairs(workspace:GetDescendants()) do
+            if stalker:IsA("Model") and stalker.Name == "Stalker" then
+                local stalkerPart = stalker:FindFirstChild("HumanoidRootPart")
+                if stalkerPart then
+                    stalkerPart:Destroy()
+                end
+            end
+        end
+    end
+
+    -- Auto Coletar Munição
+    if configs.municao then
+        for _, ammo in pairs(workspace:GetDescendants()) do
+            if ammo:IsA("Part") and (ammo.Name:lower():find("ammo") or ammo.Name:lower():find("municao")) then
+                if (ammo.Position - char.HumanoidRootPart.Position).Magnitude < 10 then
+                    local clickDetector = ammo:FindFirstChild("ClickDetector")
+                    if clickDetector then
+                        pcall(function() clickDetector:FireClick(player) end)
+                    end
+                end
+            end
+        end
+    end
+
+    -- Bypass Anti-Cheat
+    if configs.bypass then
+        for _, check in pairs(workspace:GetDescendants()) do
+            if check:IsA("Script") and (check.Name:lower():find("anticheat") or check.Name:lower():find("anti-cheat") or check.Name:lower():find("cheat")) then
+                check.Disabled = true
+            end
+        end
+    end
+
+    -- Desabilitar Estática
+    if configs.static then
+        local staticEffect = Lighting:FindFirstChild("Static")
+        if staticEffect then
+            staticEffect.Enabled = false
+        end
+        local blurEffect = Lighting:FindFirstChild("Blur")
+        if blurEffect then
+            blurEffect.Enabled = false
+        end
+    end
+end)
+
+-- ============================================================
+-- SPRINT SPEED
+-- ============================================================
+
+RunService.RenderStepped:Connect(function()
+    local char = player.Character
+    if not char then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid then return end
+
+    local sprintSpeed = configs.sprint_speed or 17
+    humanoid.WalkSpeed = sprintSpeed
+end)
+-- ============================================================
+-- GUI DE ATIVAÇÃO DE KEY
+-- ============================================================
+
+local function criarGUIAtivacao()
+    for _, v in pairs(player.PlayerGui:GetChildren()) do
+        if v.Name == "KeySystem" then v:Destroy() end
+    end
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "KeySystem"
+    gui.Parent = player.PlayerGui
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+
+    local fundo = Instance.new("Frame")
+    fundo.Size = UDim2.new(1, 0, 1, 0)
+    fundo.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    fundo.BackgroundTransparency = 0.6
+    fundo.Parent = gui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 450, 0, 400)
+    frame.Position = UDim2.new(0.5, -225, 0.5, -200)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+    frame.BackgroundTransparency = 0.05
+    frame.BorderSizePixel = 0
+    frame.ClipsDescendants = true
+    frame.Parent = fundo
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 16)
+    corner.Parent = frame
+
+    local border = Instance.new("UIStroke")
+    border.Color = Color3.fromRGB(255, 140, 0)
+    border.Thickness = 2
+    border.Transparency = 0.3
+    border.Parent = frame
+
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 45)
+    header.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+    header.BackgroundTransparency = 0.2
+    header.BorderSizePixel = 0
+    header.Parent = frame
+    local headerCorner = Instance.new("UICorner")
+    headerCorner.CornerRadius = UDim.new(0, 16)
+    headerCorner.Parent = header
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -80, 1, 0)
+    title.Position = UDim2.new(0, 15, 0, 0)
+    title.Text = "DISTRIBUICAO DE KEYS"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 18
+    title.Font = Enum.Font.GothamBold
+    title.BackgroundTransparency = 1
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = header
+
+    local minBtn = Instance.new("TextButton")
+    minBtn.Size = UDim2.new(0, 30, 0, 30)
+    minBtn.Position = UDim2.new(1, -70, 0, 7.5)
+    minBtn.Text = "-"
+    minBtn.TextSize = 22
+    minBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+    minBtn.BackgroundTransparency = 0.4
+    minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    minBtn.Font = Enum.Font.GothamBold
+    minBtn.BorderSizePixel = 0
+    minBtn.Parent = header
+    local minCorner = Instance.new("UICorner")
+    minCorner.CornerRadius = UDim.new(0, 8)
+    minCorner.Parent = minBtn
+
+    local minimized = false
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        frame.Size = minimized and UDim2.new(0, 450, 0, 45) or UDim2.new(0, 450, 0, 400)
+        minBtn.Text = minimized and "+" or "-"
+        for _, child in pairs(frame:GetChildren()) do
+            if child ~= header then
+                child.Visible = not minimized
+            end
+        end
+    end)
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -38, 0, 7.5)
+    closeBtn.Text = "X"
+    closeBtn.TextSize = 18
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    closeBtn.BackgroundTransparency = 0.3
+    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.BorderSizePixel = 0
+    closeBtn.Parent = header
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 8)
+    closeCorner.Parent = closeBtn
+    closeBtn.MouseButton1Click:Connect(function()
+        gui:Destroy()
+    end)
+
+    local conteudoFrame = Instance.new("Frame")
+    conteudoFrame.Name = "Conteudo"
+    conteudoFrame.Size = UDim2.new(1, 0, 1, -45)
+    conteudoFrame.Position = UDim2.new(0, 0, 0, 45)
+    conteudoFrame.BackgroundTransparency = 1
+    conteudoFrame.Parent = frame
+
+    local LINKS_KEYS = {
+        ["free_10182alapapqaoqkfa"] = "https://link-target.net/5450045/U8UGMFUQ22Uc",
+        ["free_20394blbqbqbrbrlsb"] = "https://direct-link.net/5450045/QykQLu41Fp2x",
+        ["free_30567cmcrcrcscsmtc"] = "https://direct-link.net/5450045/m1aASokV7pIF",
+        ["free_40821dndsdtdudunud"] = "https://direct-link.net/5450045/glVLfwhKt4et",
+        ["free_50943eoeuevevevove"] = "https://link-center.net/5450045/l1peI74weA4g",
+        ["free_61054fpfwfwfwfwpwf"] = "https://direct-link.net/5450045/eaCiSMyybd74",
+        ["free_71265gqgxgxgxgxqgx"] = "https://link-hub.net/5450045/TGIbYBsV7EcU",
+        ["free_81376hrhyhyhyhyrhy"] = "https://link-hub.net/5450045/IkJsx7RSCwyp",
+        ["free_91487isizizizizsiz"] = "https://link-center.net/5450045/YR4NQ7ewNSkJ",
+        ["free_101598jtjajajajataj"] = "https://link-target.net/5450045/gdChsmYq0rb5",
+    }
+
+    local function getProximaKeyDisponivel()
+        for key, link in pairs(LINKS_KEYS) do
+            return key, link
+        end
+        return nil, nil
+    end
+
+    local function contarKeysDisponiveis()
+        local sucesso, resultado = pcall(function()
+            return game:HttpGet(PASTEBIN_URL)
+        end)
+        if sucesso and resultado then
+            local count = 0
+            for key in string.gmatch(resultado, "%S+") do
+                if key ~= "" then count = count + 1 end
+            end
+            return count
+        else
+            return "?"
+        end
+    end
+
+    local totalKeys = contarKeysDisponiveis()
+    local sub = Instance.new("TextLabel")
+    sub.Size = UDim2.new(1, 0, 0, 25)
+    sub.Position = UDim2.new(0, 0, 0.05, 0)
+    sub.Text = "Digite sua key de ativacao  |  " .. totalKeys .. " keys disponiveis"
+    sub.TextColor3 = Color3.fromRGB(200, 200, 200)
+    sub.TextSize = 13
+    sub.Font = Enum.Font.Gotham
+    sub.BackgroundTransparency = 1
+    sub.Parent = conteudoFrame
+
+    local keyBox = Instance.new("TextBox")
+    keyBox.Size = UDim2.new(0.8, 0, 0, 45)
+    keyBox.Position = UDim2.new(0.1, 0, 0.15, 0)
+    keyBox.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    keyBox.BackgroundTransparency = 0.2
+    keyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    keyBox.TextSize = 18
+    keyBox.Font = Enum.Font.GothamBold
+    keyBox.Text = ""
+    keyBox.PlaceholderText = "Cole sua key aqui..."
+    keyBox.ClearTextOnFocus = true
+    keyBox.BorderSizePixel = 0
+    keyBox.Parent = conteudoFrame
+    local keyCorner = Instance.new("UICorner")
+    keyCorner.CornerRadius = UDim.new(0, 10)
+    keyCorner.Parent = keyBox
+
+    local btnAtivar = Instance.new("TextButton")
+    btnAtivar.Size = UDim2.new(0.35, 0, 0, 45)
+    btnAtivar.Position = UDim2.new(0.1, 0, 0.30, 0)
+    btnAtivar.Text = "ATIVAR"
+    btnAtivar.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnAtivar.TextSize = 18
+    btnAtivar.Font = Enum.Font.GothamBold
+    btnAtivar.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+    btnAtivar.BackgroundTransparency = 0.15
+    btnAtivar.BorderSizePixel = 0
+    btnAtivar.Parent = conteudoFrame
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 10)
+    btnCorner.Parent = btnAtivar
+
+    local btnGetKey = Instance.new("TextButton")
+    btnGetKey.Size = UDim2.new(0.35, 0, 0, 45)
+    btnGetKey.Position = UDim2.new(0.55, 0, 0.30, 0)
+    btnGetKey.Text = "OBTER KEY"
+    btnGetKey.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnGetKey.TextSize = 16
+    btnGetKey.Font = Enum.Font.GothamBold
+    btnGetKey.BackgroundColor3 = Color3.fromRGB(45, 150, 200)
+    btnGetKey.BackgroundTransparency = 0.15
+    btnGetKey.BorderSizePixel = 0
+    btnGetKey.Parent = conteudoFrame
+    local btnGetKeyCorner = Instance.new("UICorner")
+    btnGetKeyCorner.CornerRadius = UDim.new(0, 10)
+    btnGetKeyCorner.Parent = btnGetKey
+
+    btnGetKey.MouseButton1Click:Connect(function()
+        local key, link = getProximaKeyDisponivel()
+        if link then
+            print("🔗 PROXIMA KEY: " .. key)
+            print("🔗 Link: " .. link)
+            pcall(function() setclipboard(link) end)
+        else
+            print("❌ Nenhuma key disponivel!")
+        end
+    end)
+
+    local status = Instance.new("TextLabel")
+    status.Size = UDim2.new(1, 0, 0, 25)
+    status.Position = UDim2.new(0, 0, 0.45, 0)
+    status.Text = "Digite sua key e clique em ATIVAR"
+    status.TextColor3 = Color3.fromRGB(150, 150, 150)
+    status.TextSize = 13
+    status.Font = Enum.Font.Gotham
+    status.BackgroundTransparency = 1
+    status.Parent = conteudoFrame
+
+    btnAtivar.MouseButton1Click:Connect(function()
+        local key = keyBox.Text
+        if key == "" then
+            status.Text = "Digite uma key!"
+            status.TextColor3 = Color3.fromRGB(255, 100, 100)
+            return
+        end
+        local valida, mensagem = verificarKey(key)
+        if valida then
+            status.Text = "KEY VALIDA! Ativando DAVI HUB..."
+            status.TextColor3 = Color3.fromRGB(100, 255, 100)
+            btnAtivar.Text = "ATIVADO!"
+            btnAtivar.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+            player:SetAttribute("DAVI_KEY", key)
+            keyValidada = true
+            task.wait(1)
+            gui:Destroy()
+            print("✅ DAVI HUB ATIVADO!")
+            
