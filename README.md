@@ -1354,6 +1354,10 @@ local function addToggle(parent, text, callback, default)
     return c
 end
 
+-- ============================================================
+-- addSlider CORRIGIDO
+-- ============================================================
+
 local function addSlider(parent, text, callback, min, max, default)
     local c = Instance.new("Frame")
     c.Size = UDim2.new(0.95, 0, 0, 50)
@@ -1403,17 +1407,26 @@ local function addSlider(parent, text, callback, min, max, default)
     vl.Parent = sf
 
     local draggingSlider = false
+    local lastValue = default
+    
     local function update(input)
         local pos = input.Position.X
         local fp = sf.AbsolutePosition.X
         local fs = sf.AbsoluteSize.X
         local pct = math.clamp((pos - fp) / fs, 0, 1)
         local val = math.floor(min + pct * (max - min))
+        
+        if val == lastValue then return end
+        lastValue = val
+        
         sb.Position = UDim2.new(pct, -8, 0, 0)
         vl.Text = tostring(val)
-        callback(val)
         l.Text = text .. " (" .. tostring(val) .. ")"
-        if configs.autoload then salvarConfiguracoes() end
+        callback(val)
+        
+        if configs.autoload then 
+            salvarConfiguracoes() 
+        end
     end
 
     sb.InputBegan:Connect(function(input)
@@ -1422,18 +1435,35 @@ local function addSlider(parent, text, callback, min, max, default)
             update(input)
         end
     end)
-    sb.InputEnded:Connect(function() draggingSlider = false end)
+    
+    sf.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingSlider = true
+            update(input)
+        end
+    end)
+    
     UserInputService.InputChanged:Connect(function(input)
         if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
             update(input)
         end
     end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingSlider = false
+        end
+    end)
 end
+
 -- ============================================================
 -- CONFIGURAR ABAS
 -- ============================================================
 
--- ABA MAIN
+-- ============================================================
+-- ABA MAIN (CORRIGIDA)
+-- ============================================================
+
 local mainCard = addCard(abaFramesMap["Main"])
 addLabel(mainCard, "🔧 " .. t("main"))
 addToggle(mainCard, t("noclip"), function(v) configs.noclip = v; toggleNoclip(v) end, configs.noclip)
@@ -1442,13 +1472,46 @@ addToggle(mainCard, t("stamina"), function(v) configs.stamina = v; toggleStamina
 addToggle(mainCard, t("o2"), function(v) configs.o2 = v; toggleO2(v) end, configs.o2)
 addToggle(mainCard, t("antifrost"), function(v) configs.antifrost = v; toggleAntiTemp(v) end, configs.antifrost)
 addToggle(mainCard, t("aimbot"), function(v) configs.aimbot = v end, configs.aimbot)
-addSlider(mainCard, t("aimspeed"), function(v) configs.aim_speed = v end, 1, 100, configs.aim_speed)
-addSlider(mainCard, t("aimdist"), function(v) configs.aim_distance = v end, 10, 200, configs.aim_distance)
-addToggle(mainCard, t("bypass"), function(v) configs.bypass = v end, configs.bypass)
-addToggle(mainCard, t("static"), function(v) configs.static = v end, configs.static)
-addSlider(mainCard, t("sprint"), function(v) configs.sprint_speed = v end, 1, 50, configs.sprint_speed)
+addSlider(mainCard, t("aimspeed"), function(v) 
+    configs.aim_speed = v
+    print("🎯 Velocidade do Aimbot: " .. v)
+end, 1, 100, configs.aim_speed or 80)
+addSlider(mainCard, t("aimdist"), function(v) 
+    configs.aim_distance = v
+    print("🎯 Distância do Aimbot: " .. v)
+end, 10, 200, configs.aim_distance or 80)
+addButton(mainCard, "🚀 Bypass Anti-Cheat", function()
+    for _, check in pairs(workspace:GetDescendants()) do
+        if check:IsA("Script") and (check.Name:lower():find("anticheat") or check.Name:lower():find("anti-cheat") or check.Name:lower():find("cheat")) then
+            check.Disabled = true
+        end
+    end
+    showNotification("🚀 Bypass Anti-Cheat executado!", Color3.fromRGB(255, 100, 100))
+end)
+addButton(mainCard, "📺 Desabilitar Estática", function()
+    local staticEffect = Lighting:FindFirstChild("Static")
+    if staticEffect then
+        staticEffect.Enabled = false
+    end
+    local blurEffect = Lighting:FindFirstChild("Blur")
+    if blurEffect then
+        blurEffect.Enabled = false
+    end
+    showNotification("📺 Estática desabilitada!", Color3.fromRGB(100, 200, 255))
+end)
+addSlider(mainCard, t("sprint"), function(v) 
+    configs.sprint_speed = v
+    local char = player.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = v
+    end
+    print("🏃 Velocidade da Sprint: " .. v)
+end, 1, 50, configs.sprint_speed or 17)
 
+-- ============================================================
 -- ABA MENU
+-- ============================================================
+
 local menuCard = addCard(abaFramesMap["Menu"])
 addLabel(menuCard, "📋 " .. t("menu"))
 addButton(menuCard, t("usuarios"), function()
@@ -1586,7 +1649,10 @@ addButton(menuCard, t("feedback"), function()
     end)
 end)
 
+-- ============================================================
 -- ABA TELEPORTES
+-- ============================================================
+
 local teleCard = addCard(abaFramesMap["Tele"])
 addLabel(teleCard, "📡 " .. t("tele"))
 
@@ -1614,7 +1680,10 @@ for nome, cframe in pairs(teleportsN3) do
     end)
 end
 
+-- ============================================================
 -- ABA NOITE 1
+-- ============================================================
+
 local n1Card = addCard(abaFramesMap["N1"])
 addLabel(n1Card, "🌙 " .. t("n1") .. " - " .. t("geral"))
 addButton(n1Card, "🔥 Refill Fireplace", function()
@@ -1634,22 +1703,105 @@ addButton(n1Card, "⛽ Grab Jerry Can", function()
     showNotification("⛽ Galão de gasolina pego!", Color3.fromRGB(200, 150, 50))
 end)
 
--- ABA NOITE 2
+-- ============================================================
+-- ABA NOITE 2 (CORRIGIDA)
+-- ============================================================
+
 local n2Card = addCard(abaFramesMap["N2"])
 addLabel(n2Card, "🌙 " .. t("n2") .. " - " .. t("geral"))
 addToggle(n2Card, t("autoscare"), function(v) configs.autoscare = v end, configs.autoscare)
-addToggle(n2Card, t("antivent"), function(v) configs.antivent = v end, configs.antivent)
-addToggle(n2Card, t("revive"), function(v) configs.revive = v end, configs.revive)
-addToggle(n2Card, t("escapesnatch"), function(v) configs.escapesnatch = v end, configs.escapesnatch)
-addToggle(n2Card, t("refillpower"), function(v) configs.refillpower = v end, configs.refillpower)
+addButton(n2Card, "💨 Anti Vent", function()
+    local char = player.Character
+    if char then
+        local wind = char:FindFirstChild("Wind")
+        if wind then
+            wind:Destroy()
+            showNotification("💨 Vento removido!", Color3.fromRGB(100, 200, 255))
+        else
+            showNotification("❌ Nenhum vento encontrado!", Color3.fromRGB(200, 0, 0))
+        end
+    end
+end)
+addButton(n2Card, "💚 Revive", function()
+    local reviveEvent = RS:FindFirstChild("Revive")
+    if reviveEvent then
+        pcall(function() reviveEvent:FireServer() end)
+        showNotification("💚 Revive executado!", Color3.fromRGB(0, 255, 100))
+    else
+        showNotification("❌ Revive não disponível!", Color3.fromRGB(200, 0, 0))
+    end
+end)
+addButton(n2Card, "🏃 Escape Snatch", function()
+    local char = player.Character
+    if char then
+        local snatch = char:FindFirstChild("Snatch")
+        if snatch then
+            snatch:Destroy()
+            showNotification("🏃 Escape Snatch executado!", Color3.fromRGB(255, 200, 50))
+        else
+            showNotification("❌ Snatch não encontrado!", Color3.fromRGB(200, 0, 0))
+        end
+    end
+end)
+addButton(n2Card, "⚡ Refill Power", function()
+    local char = player.Character
+    if char then
+        local power = char:FindFirstChild("Power")
+        if power then
+            pcall(function() power.Value = 100 end)
+            showNotification("⚡ Energia recarregada!", Color3.fromRGB(255, 200, 50))
+        else
+            showNotification("❌ Power não encontrado!", Color3.fromRGB(200, 0, 0))
+        end
+    end
+end)
 addToggle(n2Card, t("antistalker"), function(v) configs.antistalker = v end, configs.antistalker)
 
--- ABA NOITE 3
+-- ============================================================
+-- ABA NOITE 3 (CORRIGIDA)
+-- ============================================================
+
 local n3Card = addCard(abaFramesMap["N3"])
 addLabel(n3Card, "🌙 " .. t("n3") .. " - " .. t("geral"))
-addToggle(n3Card, t("municao"), function(v) configs.municao = v end, configs.municao)
+addButton(n3Card, "🔫 Collect Ammo", function()
+    local char = player.Character
+    if not char then
+        showNotification("❌ Personagem não encontrado!", Color3.fromRGB(200, 0, 0))
+        return
+    end
+    
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then
+        showNotification("❌ HumanoidRootPart não encontrado!", Color3.fromRGB(200, 0, 0))
+        return
+    end
+    
+    local collected = 0
+    for _, ammo in pairs(workspace:GetDescendants()) do
+        if ammo:IsA("Part") and (ammo.Name:lower():find("ammo") or ammo.Name:lower():find("municao")) then
+            if (ammo.Position - rootPart.Position).Magnitude < 10 then
+                local clickDetector = ammo:FindFirstChild("ClickDetector")
+                if clickDetector then
+                    pcall(function() 
+                        clickDetector:FireClick(player) 
+                        collected = collected + 1
+                    end)
+                end
+            end
+        end
+    end
+    
+    if collected > 0 then
+        showNotification("🔫 " .. collected .. " munições coletadas!", Color3.fromRGB(255, 150, 50))
+    else
+        showNotification("❌ Nenhuma munição encontrada!", Color3.fromRGB(200, 0, 0))
+    end
+end)
 
+-- ============================================================
 -- ABA ESP
+-- ============================================================
+
 local espCard = addCard(abaFramesMap["ESP"])
 addLabel(espCard, "👁️ " .. t("esp"))
 addToggle(espCard, t("esp_players"), function(v) configs.esp_players = v end, configs.esp_players)
@@ -1657,7 +1809,10 @@ addToggle(espCard, t("esp_larry"), function(v) configs.esp_larry = v end, config
 addToggle(espCard, t("esp_stalker"), function(v) configs.esp_stalker = v end, configs.esp_stalker)
 addToggle(espCard, t("esp_zombie"), function(v) configs.esp_zombie = v end, configs.esp_zombie)
 
+-- ============================================================
 -- ABA GERAL
+-- ============================================================
+
 local geralCard = addCard(abaFramesMap["Geral"])
 addLabel(geralCard, "⚙️ " .. t("geral"))
 addToggle(geralCard, t("notifier"), function(v)
@@ -1670,7 +1825,10 @@ addToggle(geralCard, t("autoload"), function(v)
     else showNotification("💾 Auto Load DESATIVADO!", Color3.fromRGB(100, 200, 100)) end
 end, configs.autoload)
 
+-- ============================================================
 -- ABA CONFIG
+-- ============================================================
+
 local configCard = addCard(abaFramesMap["Config"])
 addLabel(configCard, "⚙️ " .. t("config"))
 addButton(configCard, "💾 " .. t("salvar"), function()
@@ -1698,5 +1856,3 @@ for _, lang in pairs(listaIdiomas) do
         loadstring(game:HttpGet("https://raw.githubusercontent.com/soniaasus2-arch/Night4/refs/heads/main/README.md"))()
     end)
 end
-
-
