@@ -21,16 +21,16 @@ local keyValidada = false
 
 -- Tabela de expiração das keys
 local EXPIRACAO_KEYS = {
-    ["free_10182alapapqaoqkfa"] = "31/07/2026",
-    ["free_20394blbqbqbrbrlsb"] = "31/07/2026",
-    ["free_30567cmcrcrcscsmtc"] = "31/07/2026",
-    ["free_40821dndsdtdudunud"] = "31/07/2026",
-    ["free_50943eoeuevevevove"] = "31/07/2026",
-    ["free_61054fpfwfwfwfwpwf"] = "31/07/2026",
-    ["free_71265gqgxgxgxgxqgx"] = "31/07/2026",
-    ["free_81376hrhyhyhyhyrhy"] = "31/07/2026",
-    ["free_91487isizizizizsiz"] = "31/07/2026",
-    ["free_101598jtjajajajataj"] = "31/07/2026",
+    ["free_10182alapapqaoqkfa"] = "25/07/2026",
+    ["free_20394blbqbqbrbrlsb"] = "25/07/2026",
+    ["free_30567cmcrcrcscsmtc"] = "25/07/2026",
+    ["free_40821dndsdtdudunud"] = "26/07/2026",
+    ["free_50943eoeuevevevove"] = "25/07/2026",
+    ["free_61054fpfwfwfwfwpwf"] = "25/07/2026",
+    ["free_71265gqgxgxgxgxqgx"] = "25/07/2026",
+    ["free_81376hrhyhyhyhyrhy"] = "25/07/2026",
+    ["free_91487isizizizizsiz"] = "25/07/2026",
+    ["free_101598jtjajajajataj"] = "25/07/2026",
 }
 
 local function isKeyExpirada(key)
