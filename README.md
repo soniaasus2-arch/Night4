@@ -10,273 +10,56 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ChatService = game:GetService("Chat")
 -- ============================================================
+-- DAVI HUB - RESIDENCE MASSACRE (COM ANTI-TAMPER SIMPLIFICADO)
 -- ============================================================
 
 local player = game.Players.LocalPlayer
 local HttpService = game:GetService("HttpService")
 
 -- ============================================================
--- CONFIGURAÇÕES
+-- ANTI-TAMPER SIMPLIFICADO
 -- ============================================================
 
 local DONO_ID = "5135365156"
-local PASTA_DELTA = "/sdcard/Delta/"  -- Caminho do Delta
--- Se não funcionar, tente: "/storage/emulated/0/Delta/"
 
-local function getCaminho(arquivo)
-    return PASTA_DELTA .. arquivo
-end
-
--- ============================================================
--- FUNÇÃO PARA GERAR HASH
--- ============================================================
-
-local function gerarHashDoScript()
-    local codigoFixo = [[
-        DAVI HUB - Residence Massacre v2.0
-    ]]
-    
-    local hash = 0
-    local texto = codigoFixo .. tostring(os.time())
-    
-    for i = 1, #texto do
-        hash = (hash * 31 + string.byte(texto, i)) % 2^31
-    end
-    
-    return tostring(hash)
-end
-
--- ============================================================
--- FUNÇÃO PARA VERIFICAR SE É O DONO
--- ============================================================
-
+-- Verifica se é o dono
 local function isDono()
     return tostring(player.UserId) == DONO_ID
 end
 
--- ============================================================
--- FUNÇÃO PARA ESCREVER ARQUIVO (COM VERIFICAÇÃO)
--- ============================================================
-
-local function escreverArquivo(nome, conteudo)
-    local caminho = getCaminho(nome)
-    local sucesso, erro = pcall(function()
-        writefile(caminho, conteudo)
-    end)
-    if sucesso then
-        print("✅ Arquivo salvo: " .. caminho)
-        return true
-    else
-        print("❌ Erro ao salvar: " .. tostring(erro))
-        return false
-    end
-end
-
--- ============================================================
--- FUNÇÃO PARA LER ARQUIVO (COM VERIFICAÇÃO)
--- ============================================================
-
-local function lerArquivo(nome)
-    local caminho = getCaminho(nome)
-    local sucesso, conteudo = pcall(function()
-        return readfile(caminho)
-    end)
-    if sucesso then
-        return true, conteudo
-    else
-        return false, nil
-    end
-end
-
--- ============================================================
--- VERIFICAR INTEGRIDADE
--- ============================================================
-
-local function verificarIntegridade()
-    if isDono() then
-        print("👑 Dono do script detectado! Proteção desativada.")
-        return true
-    end
+-- Se for o dono, pula a proteção
+if isDono() then
+    print("👑 Dono do script - proteção desativada!")
+else
+    -- Verifica se o script foi modificado
+    local hashOriginal = "DAVIHUB2024" -- Hash fixo
     
-    -- Tenta criar a pasta Delta se não existir
+    -- Tenta ler o hash salvo
+    local hashSalvo = ""
     pcall(function()
-        makefolder(PASTA_DELTA)
+        hashSalvo = readfile("DAVI_HUB_Hash.txt")
     end)
     
-    local sucesso, hashSalvo = lerArquivo("DAVI_HUB_Hash.txt")
-    local hashAtual = gerarHashDoScript()
-    
-    if not sucesso or not hashSalvo or hashSalvo == "" then
-        escreverArquivo("DAVI_HUB_Hash.txt", hashAtual)
-        print("🔒 Hash do script salvo pela primeira vez!")
-        return true
-    end
-    
-    if hashSalvo ~= hashAtual then
-        print("🚫 SCRIPT MODIFICADO DETECTADO!")
-        print("   Hash salvo: " .. hashSalvo)
-        print("   Hash atual: " .. hashAtual)
-        return false
-    end
-    
-    print("✅ Script verificado com sucesso!")
-    return true
-end
-
--- ============================================================
--- FUNÇÃO PARA BANIR
--- ============================================================
-
-local function banirUsuario(motivo)
-    if isDono() then
-        print("👑 Dono do script - banimento ignorado!")
-        return
-    end
-    
-    local banidos = {}
-    local sucesso, dados = lerArquivo("DAVI_HUB_Banidos.json")
-    if sucesso and dados then
-        banidos = HttpService:JSONDecode(dados) or {}
-    end
-    
-    banidos[tostring(player.UserId)] = {
-        motivo = motivo or "Modificação do script",
-        data = os.date("%d/%m/%Y %H:%M:%S"),
-        nome = player.Name
-    }
-    
-    escreverArquivo("DAVI_HUB_Banidos.json", HttpService:JSONEncode(banidos))
-    
-    -- Mostra tela de ban
-    local function mostrarBan()
-        local gui = Instance.new("ScreenGui")
-        gui.Name = "BanScreen"
-        gui.Parent = player.PlayerGui
-        gui.IgnoreGuiInset = true
-        
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(0, 500, 0, 250)
-        frame.Position = UDim2.new(0.5, -250, 0.5, -125)
-        frame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
-        frame.BackgroundTransparency = 0.05
-        frame.BorderSizePixel = 0
-        frame.ClipsDescendants = true
-        frame.Parent = gui
-        
-        local corner = Instance.new("UICorner")
-        corner.Parent = frame
-        corner.CornerRadius = UDim.new(0, 16)
-        
-        local border = Instance.new("UIStroke")
-        border.Parent = frame
-        border.Color = Color3.fromRGB(255, 0, 0)
-        border.Thickness = 3
-        border.Transparency = 0.3
-        
-        local title = Instance.new("TextLabel")
-        title.Size = UDim2.new(1, 0, 0, 50)
-        title.Position = UDim2.new(0, 0, 0, 0)
-        title.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        title.BackgroundTransparency = 0.2
-        title.Text = "🚫 SCRIPT MODIFICADO!"
-        title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        title.TextSize = 24
-        title.Font = Enum.Font.GothamBold
-        title.Parent = frame
-        
-        local motivoLabel = Instance.new("TextLabel")
-        motivoLabel.Size = UDim2.new(0.9, 0, 0, 40)
-        motivoLabel.Position = UDim2.new(0.05, 0, 0.2, 0)
-        motivoLabel.BackgroundTransparency = 1
-        motivoLabel.Text = "Motivo: " .. motivo
-        motivoLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-        motivoLabel.TextSize = 18
-        motivoLabel.Font = Enum.Font.GothamBold
-        motivoLabel.Parent = frame
-        
-        local dataLabel = Instance.new("TextLabel")
-        dataLabel.Size = UDim2.new(0.9, 0, 0, 30)
-        dataLabel.Position = UDim2.new(0.05, 0, 0.35, 0)
-        dataLabel.BackgroundTransparency = 1
-        dataLabel.Text = "Data: " .. os.date("%d/%m/%Y %H:%M:%S")
-        dataLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        dataLabel.TextSize = 14
-        dataLabel.Font = Enum.Font.Gotham
-        dataLabel.Parent = frame
-        
-        local closeBtn = Instance.new("TextButton")
-        closeBtn.Size = UDim2.new(0, 200, 0, 40)
-        closeBtn.Position = UDim2.new(0.5, -100, 0, 0.75)
-        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        closeBtn.BackgroundTransparency = 0.2
-        closeBtn.Text = "FECHAR"
-        closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        closeBtn.TextSize = 16
-        closeBtn.Font = Enum.Font.GothamBold
-        closeBtn.Parent = frame
-        
-        closeBtn.MouseButton1Click:Connect(function()
-            gui:Destroy()
-            pcall(function()
-                player:Kick("Script modificado! Use a versão original.")
-            end)
-        end)
-        
-        task.wait(10)
-        gui:Destroy()
+    -- Se não tem hash salvo, cria um
+    if hashSalvo == "" or hashSalvo == nil then
         pcall(function()
-            player:Kick("Script modificado! Use a versão original.")
+            writefile("DAVI_HUB_Hash.txt", hashOriginal)
         end)
-    end
-    
-    mostrarBan()
-end
-
--- ============================================================
--- VERIFICAR SE JÁ ESTÁ BANIDO
--- ============================================================
-
-local function verificarBanimento()
-    if isDono() then
-        return false
-    end
-    
-    local sucesso, dados = lerArquivo("DAVI_HUB_Banidos.json")
-    if sucesso and dados then
-        local banidos = HttpService:JSONDecode(dados) or {}
-        if banidos[tostring(player.UserId)] then
-            return true, banidos[tostring(player.UserId)]
+        print("🔒 Hash salvo pela primeira vez!")
+    else
+        -- Se o hash for diferente, o script foi modificado
+        if hashSalvo ~= hashOriginal then
+            print("🚫 SCRIPT MODIFICADO!")
+            player:Kick("Script modificado! Use a versão original.")
+            return
         end
     end
-    return false
 end
 
--- ============================================================
--- INICIALIZAR
--- ============================================================
+print("✅ Script verificado com sucesso!")
 
--- Verifica se já está banido
-local banido, dados = verificarBanimento()
-if banido then
-    print("🚫 Usuário banido: " .. dados.motivo)
-    return
-end
-
--- Verifica integridade
-if not verificarIntegridade() then
-    banirUsuario("Script modificado (hash não corresponde)")
-    return
-end
-
-print("")
-print("═══════════════════════════════════════════")
-print("🛡️ ANTI-TAMPER ATIVADO!")
-print("═══════════════════════════════════════════")
-print("👑 Dono do script: " .. DONO_ID)
-print("📁 Arquivos salvos em: " .. PASTA_DELTA)
-print("📌 O script está protegido contra modificações")
-print("═══════════════════════════════════════════")
 -- ============================================================
+-- 
 -- WEBHOOK
 -- ============================================================
 
