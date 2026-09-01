@@ -1,4 +1,3 @@
-
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -12,7 +11,6 @@ local Workspace = game:GetService("Workspace")
 local ChatService = game:GetService("Chat")
 
 -- ============================================================
--- 
 -- WEBHOOK
 -- ============================================================
 
