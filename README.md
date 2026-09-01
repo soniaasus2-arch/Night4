@@ -11,6 +11,288 @@ local Workspace = game:GetService("Workspace")
 local ChatService = game:GetService("Chat")
 
 -- ============================================================
+-- SISTEMA ANTI-TAMPER - COM EXCEÇÃO PARA O DONO
+-- ============================================================
+
+local player = game.Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+
+-- ============================================================
+-- 🔽 ID DO DONO (VOCÊ) 🔽
+-- ============================================================
+
+local DONO_ID = "5135365156"  -- Seu ID
+
+-- ============================================================
+-- CONFIGURAÇÕES
+-- ============================================================
+
+local AntiTamper = {
+    ArquivoHash = "DAVI_HUB_Hash.txt",
+    ArquivoBan = "DAVI_HUB_Banidos.json",
+    Versao = "2.0",
+    HashOriginal = nil
+}
+
+-- ============================================================
+-- FUNÇÃO PARA GERAR HASH DO SCRIPT
+-- ============================================================
+
+local function gerarHashDoScript()
+    local codigoFixo = [[
+        DAVI HUB - Residence Massacre v2.0
+        -- COLE AQUI UMA LINHA ÚNICA DO SEU SCRIPT
+    ]]
+    
+    local hash = 0
+    local texto = codigoFixo .. tostring(os.time())
+    
+    for i = 1, #texto do
+        hash = (hash * 31 + string.byte(texto, i)) % 2^31
+    end
+    
+    return tostring(hash)
+end
+
+-- ============================================================
+-- FUNÇÃO PARA VERIFICAR SE É O DONO
+-- ============================================================
+
+local function isDono()
+    local userId = tostring(player.UserId)
+    return userId == DONO_ID
+end
+
+-- ============================================================
+-- VERIFICAR INTEGRIDADE DO SCRIPT
+-- ============================================================
+
+local function verificarIntegridade()
+    -- Se for o dono, sempre retorna verdadeiro (não é banido)
+    if isDono() then
+        print("👑 Dono do script detectado! Proteção desativada.")
+        return true
+    end
+    
+    local sucesso, hashSalvo = pcall(function()
+        return readfile(AntiTamper.ArquivoHash)
+    end)
+    
+    local hashAtual = gerarHashDoScript()
+    
+    if not sucesso or not hashSalvo or hashSalvo == "" then
+        pcall(function()
+            writefile(AntiTamper.ArquivoHash, hashAtual)
+        end)
+        print("🔒 Hash do script salvo pela primeira vez!")
+        return true
+    end
+    
+    if hashSalvo ~= hashAtual then
+        print("🚫 SCRIPT MODIFICADO DETECTADO!")
+        print("   Hash salvo: " .. hashSalvo)
+        print("   Hash atual: " .. hashAtual)
+        return false
+    end
+    
+    print("✅ Script verificado com sucesso!")
+    return true
+end
+
+-- ============================================================
+-- FUNÇÃO PARA BANIR O USUÁRIO (COM EXCEÇÃO DO DONO)
+-- ============================================================
+
+local function banirUsuario(motivo)
+    -- Se for o dono, não banir
+    if isDono() then
+        print("👑 Dono do script - banimento ignorado!")
+        return
+    end
+    
+    local banidos = {}
+    local sucesso, dados = pcall(function()
+        return readfile(AntiTamper.ArquivoBan)
+    end)
+    if sucesso and dados then
+        banidos = HttpService:JSONDecode(dados) or {}
+    end
+    
+    local userId = tostring(player.UserId)
+    banidos[userId] = {
+        motivo = motivo or "Modificação do script",
+        data = os.date("%d/%m/%Y %H:%M:%S"),
+        nome = player.Name,
+        versao = AntiTamper.Versao
+    }
+    
+    pcall(function()
+        writefile(AntiTamper.ArquivoBan, HttpService:JSONEncode(banidos))
+    end)
+    
+    -- Mostra tela de ban
+    local function mostrarBan()
+        local gui = Instance.new("ScreenGui")
+        gui.Name = "BanScreen"
+        gui.Parent = player.PlayerGui
+        gui.IgnoreGuiInset = true
+        
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 500, 0, 250)
+        frame.Position = UDim2.new(0.5, -250, 0.5, -125)
+        frame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+        frame.BackgroundTransparency = 0.05
+        frame.BorderSizePixel = 0
+        frame.ClipsDescendants = true
+        frame.Parent = gui
+        
+        local corner = Instance.new("UICorner")
+        corner.Parent = frame
+        corner.CornerRadius = UDim.new(0, 16)
+        
+        local border = Instance.new("UIStroke")
+        border.Parent = frame
+        border.Color = Color3.fromRGB(255, 0, 0)
+        border.Thickness = 3
+        border.Transparency = 0.3
+        
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 50)
+        title.Position = UDim2.new(0, 0, 0, 0)
+        title.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        title.BackgroundTransparency = 0.2
+        title.Text = "🚫 SCRIPT MODIFICADO!"
+        title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        title.TextSize = 24
+        title.Font = Enum.Font.GothamBold
+        title.Parent = frame
+        
+        local motivoLabel = Instance.new("TextLabel")
+        motivoLabel.Size = UDim2.new(0.9, 0, 0, 40)
+        motivoLabel.Position = UDim2.new(0.05, 0, 0.2, 0)
+        motivoLabel.BackgroundTransparency = 1
+        motivoLabel.Text = "Motivo: " .. motivo
+        motivoLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+        motivoLabel.TextSize = 18
+        motivoLabel.Font = Enum.Font.GothamBold
+        motivoLabel.Parent = frame
+        
+        local dataLabel = Instance.new("TextLabel")
+        dataLabel.Size = UDim2.new(0.9, 0, 0, 30)
+        dataLabel.Position = UDim2.new(0.05, 0, 0.35, 0)
+        dataLabel.BackgroundTransparency = 1
+        dataLabel.Text = "Data: " .. banidos[userId].data
+        dataLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+        dataLabel.TextSize = 14
+        dataLabel.Font = Enum.Font.Gotham
+        dataLabel.Parent = frame
+        
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(0.9, 0, 0, 40)
+        descLabel.Position = UDim2.new(0.05, 0, 0.5, 0)
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = "O script foi modificado.\nExecute a versão original."
+        descLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        descLabel.TextSize = 14
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.Parent = frame
+        
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 200, 0, 40)
+        closeBtn.Position = UDim2.new(0.5, -100, 0, 0.75)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.BackgroundTransparency = 0.2
+        closeBtn.Text = "FECHAR"
+        closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        closeBtn.TextSize = 16
+        closeBtn.Font = Enum.Font.GothamBold
+        closeBtn.Parent = frame
+        
+        closeBtn.MouseButton1Click:Connect(function()
+            gui:Destroy()
+            pcall(function()
+                player:Kick("Script modificado! Use a versão original.")
+            end)
+        end)
+        
+        task.wait(10)
+        gui:Destroy()
+        pcall(function()
+            player:Kick("Script modificado! Use a versão original.")
+        end)
+    end
+    
+    mostrarBan()
+end
+
+-- ============================================================
+-- VERIFICAR SE O USUÁRIO JÁ ESTÁ BANIDO (COM EXCEÇÃO DO DONO)
+-- ============================================================
+
+local function verificarBanimento()
+    -- Se for o dono, nunca está banido
+    if isDono() then
+        return false
+    end
+    
+    local sucesso, dados = pcall(function()
+        return readfile(AntiTamper.ArquivoBan)
+    end)
+    if sucesso and dados then
+        local banidos = HttpService:JSONDecode(dados) or {}
+        if banidos[tostring(player.UserId)] then
+            return true, banidos[tostring(player.UserId)]
+        end
+    end
+    return false
+end
+
+-- ============================================================
+-- FUNÇÃO PARA LIMPAR BANIMENTO (APENAS ADMIN)
+-- ============================================================
+
+local function limparBanimento(userId)
+    local sucesso, dados = pcall(function()
+        return readfile(AntiTamper.ArquivoBan)
+    end)
+    if sucesso and dados then
+        local banidos = HttpService:JSONDecode(dados) or {}
+        banidos[userId] = nil
+        pcall(function()
+            writefile(AntiTamper.ArquivoBan, HttpService:JSONEncode(banidos))
+        end)
+        print("✅ Banimento removido para ID: " .. userId)
+    end
+end
+
+-- ============================================================
+-- INICIALIZAR PROTEÇÃO
+-- ============================================================
+
+-- Verifica se já está banido
+local banido, dados = verificarBanimento()
+if banido then
+    print("🚫 Usuário banido: " .. dados.motivo)
+    return
+end
+
+-- Verifica integridade do script (dono sempre passa)
+if not verificarIntegridade() then
+    banirUsuario("Script modificado (hash não corresponde)")
+    return
+end
+
+print("")
+print("═══════════════════════════════════════════")
+print("🛡️ ANTI-TAMPER ATIVADO!")
+print("═══════════════════════════════════════════")
+print("👑 Dono do script: " .. DONO_ID)
+print("📌 O script está protegido contra modificações")
+print("📌 O dono NUNCA será banido")
+print("═══════════════════════════════════════════")
+
+-- ============================================================
 -- WEBHOOK
 -- ============================================================
 
