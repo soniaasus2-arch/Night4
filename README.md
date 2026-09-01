@@ -1,7 +1,11 @@
+-- ============================================================
+-- DAVI HUB - RESIDENCE MASSACRE (VERSÃO CORRIGIDA)
+-- ============================================================
+
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
-local Camera = workspace:WaitForChild("CurrentCamera")
+local Camera = workspace.CurrentCamera
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
@@ -381,6 +385,7 @@ local function showNotification(text, cor)
     task.wait(0.5)
     gui:Destroy()
 end
+
 -- ============================================================
 -- FUNÇÃO DE TELEPORT
 -- ============================================================
@@ -685,6 +690,7 @@ local function toggleAimbot(value)
         end)
     end
 end
+
 -- ============================================================
 -- TELEPORTS
 -- ============================================================
@@ -1133,7 +1139,7 @@ local function criarGUI()
         sf.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
         sf.BorderSizePixel = 0
         sf.Parent = c
-
+        
         local sfCorner = Instance.new("UICorner")
         sfCorner.CornerRadius = UDim.new(0, 7)
         sfCorner.Parent = sf
@@ -1188,7 +1194,8 @@ local function criarGUI()
             end
         end)
     end
-      -- CONFIGURAR ABAS
+    
+    -- CONFIGURAR ABAS
     
     -- ABA MAIN
     local mainCard = addCard(abaFramesMap["Main"])
@@ -1551,6 +1558,7 @@ local function criarGUI()
         showNotification("Configurações", "Resetadas com sucesso!", 3)
     end)
 end
+
 -- ============================================================
 -- INICIALIZAR
 -- ============================================================
