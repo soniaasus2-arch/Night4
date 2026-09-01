@@ -1,8 +1,4 @@
--- ============================================================
--- DAVI HUB - RESIDENCE MASSACRE (CORRIGIDO)
--- ============================================================
 
--- 1. PRIMEIRO: CARREGAR OS SERVIÇOS
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -14,41 +10,6 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ChatService = game:GetService("Chat")
-
--- 2. SEGUNDO: ANTI-TAMPER (USA OS SERVIÇOS ACIMA)
-print("🔍 Iniciando verificação de integridade...")
-
-local DONO_ID = "5135365156"
-
--- Verifica se é o dono
-if tostring(player.UserId) == DONO_ID then
-    print("👑 Dono do script detectado! Proteção desativada.")
-else
-    -- Tenta ler o hash salvo
-    local hashSalvo = ""
-    pcall(function()
-        hashSalvo = readfile("DAVI_HUB_Hash.txt")
-    end)
-    
-    -- Hash fixo do script (NÃO MODIFIQUE)
-    local hashOriginal = "DAVIHUB2024"
-    
-    if hashSalvo == "" or hashSalvo == nil then
-        -- Primeira execução: salva o hash
-        pcall(function()
-            writefile("DAVI_HUB_Hash.txt", hashOriginal)
-        end)
-        print("🔒 Hash salvo pela primeira vez!")
-    else
-        -- Verifica se o script foi modificado
-        if hashSalvo ~= hashOriginal then
-            print("🚫 SCRIPT MODIFICADO DETECTADO!")
-            player:Kick("Script modificado! Use a versão original.")
-            return
-        end
-        print("✅ Script verificado com sucesso!")
-    end
-end
 
 -- ============================================================
 -- 
