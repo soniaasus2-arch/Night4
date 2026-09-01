@@ -9,39 +9,31 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ChatService = game:GetService("Chat")
-
 -- ============================================================
--- SISTEMA ANTI-TAMPER - COM EXCEÇÃO PARA O DONO
 -- ============================================================
 
 local player = game.Players.LocalPlayer
 local HttpService = game:GetService("HttpService")
 
 -- ============================================================
--- 🔽 ID DO DONO (VOCÊ) 🔽
--- ============================================================
-
-local DONO_ID = "5135365156"  -- Seu ID
-
--- ============================================================
 -- CONFIGURAÇÕES
 -- ============================================================
 
-local AntiTamper = {
-    ArquivoHash = "DAVI_HUB_Hash.txt",
-    ArquivoBan = "DAVI_HUB_Banidos.json",
-    Versao = "2.0",
-    HashOriginal = nil
-}
+local DONO_ID = "5135365156"
+local PASTA_DELTA = "/sdcard/Delta/"  -- Caminho do Delta
+-- Se não funcionar, tente: "/storage/emulated/0/Delta/"
+
+local function getCaminho(arquivo)
+    return PASTA_DELTA .. arquivo
+end
 
 -- ============================================================
--- FUNÇÃO PARA GERAR HASH DO SCRIPT
+-- FUNÇÃO PARA GERAR HASH
 -- ============================================================
 
 local function gerarHashDoScript()
     local codigoFixo = [[
         DAVI HUB - Residence Massacre v2.0
-        -- COLE AQUI UMA LINHA ÚNICA DO SEU SCRIPT
     ]]
     
     local hash = 0
@@ -59,31 +51,63 @@ end
 -- ============================================================
 
 local function isDono()
-    local userId = tostring(player.UserId)
-    return userId == DONO_ID
+    return tostring(player.UserId) == DONO_ID
 end
 
 -- ============================================================
--- VERIFICAR INTEGRIDADE DO SCRIPT
+-- FUNÇÃO PARA ESCREVER ARQUIVO (COM VERIFICAÇÃO)
+-- ============================================================
+
+local function escreverArquivo(nome, conteudo)
+    local caminho = getCaminho(nome)
+    local sucesso, erro = pcall(function()
+        writefile(caminho, conteudo)
+    end)
+    if sucesso then
+        print("✅ Arquivo salvo: " .. caminho)
+        return true
+    else
+        print("❌ Erro ao salvar: " .. tostring(erro))
+        return false
+    end
+end
+
+-- ============================================================
+-- FUNÇÃO PARA LER ARQUIVO (COM VERIFICAÇÃO)
+-- ============================================================
+
+local function lerArquivo(nome)
+    local caminho = getCaminho(nome)
+    local sucesso, conteudo = pcall(function()
+        return readfile(caminho)
+    end)
+    if sucesso then
+        return true, conteudo
+    else
+        return false, nil
+    end
+end
+
+-- ============================================================
+-- VERIFICAR INTEGRIDADE
 -- ============================================================
 
 local function verificarIntegridade()
-    -- Se for o dono, sempre retorna verdadeiro (não é banido)
     if isDono() then
         print("👑 Dono do script detectado! Proteção desativada.")
         return true
     end
     
-    local sucesso, hashSalvo = pcall(function()
-        return readfile(AntiTamper.ArquivoHash)
+    -- Tenta criar a pasta Delta se não existir
+    pcall(function()
+        makefolder(PASTA_DELTA)
     end)
     
+    local sucesso, hashSalvo = lerArquivo("DAVI_HUB_Hash.txt")
     local hashAtual = gerarHashDoScript()
     
     if not sucesso or not hashSalvo or hashSalvo == "" then
-        pcall(function()
-            writefile(AntiTamper.ArquivoHash, hashAtual)
-        end)
+        escreverArquivo("DAVI_HUB_Hash.txt", hashAtual)
         print("🔒 Hash do script salvo pela primeira vez!")
         return true
     end
@@ -100,35 +124,28 @@ local function verificarIntegridade()
 end
 
 -- ============================================================
--- FUNÇÃO PARA BANIR O USUÁRIO (COM EXCEÇÃO DO DONO)
+-- FUNÇÃO PARA BANIR
 -- ============================================================
 
 local function banirUsuario(motivo)
-    -- Se for o dono, não banir
     if isDono() then
         print("👑 Dono do script - banimento ignorado!")
         return
     end
     
     local banidos = {}
-    local sucesso, dados = pcall(function()
-        return readfile(AntiTamper.ArquivoBan)
-    end)
+    local sucesso, dados = lerArquivo("DAVI_HUB_Banidos.json")
     if sucesso and dados then
         banidos = HttpService:JSONDecode(dados) or {}
     end
     
-    local userId = tostring(player.UserId)
-    banidos[userId] = {
+    banidos[tostring(player.UserId)] = {
         motivo = motivo or "Modificação do script",
         data = os.date("%d/%m/%Y %H:%M:%S"),
-        nome = player.Name,
-        versao = AntiTamper.Versao
+        nome = player.Name
     }
     
-    pcall(function()
-        writefile(AntiTamper.ArquivoBan, HttpService:JSONEncode(banidos))
-    end)
+    escreverArquivo("DAVI_HUB_Banidos.json", HttpService:JSONEncode(banidos))
     
     -- Mostra tela de ban
     local function mostrarBan()
@@ -181,22 +198,11 @@ local function banirUsuario(motivo)
         dataLabel.Size = UDim2.new(0.9, 0, 0, 30)
         dataLabel.Position = UDim2.new(0.05, 0, 0.35, 0)
         dataLabel.BackgroundTransparency = 1
-        dataLabel.Text = "Data: " .. banidos[userId].data
+        dataLabel.Text = "Data: " .. os.date("%d/%m/%Y %H:%M:%S")
         dataLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
         dataLabel.TextSize = 14
         dataLabel.Font = Enum.Font.Gotham
         dataLabel.Parent = frame
-        
-        local descLabel = Instance.new("TextLabel")
-        descLabel.Size = UDim2.new(0.9, 0, 0, 40)
-        descLabel.Position = UDim2.new(0.05, 0, 0.5, 0)
-        descLabel.BackgroundTransparency = 1
-        descLabel.Text = "O script foi modificado.\nExecute a versão original."
-        descLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        descLabel.TextSize = 14
-        descLabel.Font = Enum.Font.Gotham
-        descLabel.TextWrapped = true
-        descLabel.Parent = frame
         
         local closeBtn = Instance.new("TextButton")
         closeBtn.Size = UDim2.new(0, 200, 0, 40)
@@ -227,18 +233,15 @@ local function banirUsuario(motivo)
 end
 
 -- ============================================================
--- VERIFICAR SE O USUÁRIO JÁ ESTÁ BANIDO (COM EXCEÇÃO DO DONO)
+-- VERIFICAR SE JÁ ESTÁ BANIDO
 -- ============================================================
 
 local function verificarBanimento()
-    -- Se for o dono, nunca está banido
     if isDono() then
         return false
     end
     
-    local sucesso, dados = pcall(function()
-        return readfile(AntiTamper.ArquivoBan)
-    end)
+    local sucesso, dados = lerArquivo("DAVI_HUB_Banidos.json")
     if sucesso and dados then
         local banidos = HttpService:JSONDecode(dados) or {}
         if banidos[tostring(player.UserId)] then
@@ -249,25 +252,7 @@ local function verificarBanimento()
 end
 
 -- ============================================================
--- FUNÇÃO PARA LIMPAR BANIMENTO (APENAS ADMIN)
--- ============================================================
-
-local function limparBanimento(userId)
-    local sucesso, dados = pcall(function()
-        return readfile(AntiTamper.ArquivoBan)
-    end)
-    if sucesso and dados then
-        local banidos = HttpService:JSONDecode(dados) or {}
-        banidos[userId] = nil
-        pcall(function()
-            writefile(AntiTamper.ArquivoBan, HttpService:JSONEncode(banidos))
-        end)
-        print("✅ Banimento removido para ID: " .. userId)
-    end
-end
-
--- ============================================================
--- INICIALIZAR PROTEÇÃO
+-- INICIALIZAR
 -- ============================================================
 
 -- Verifica se já está banido
@@ -277,7 +262,7 @@ if banido then
     return
 end
 
--- Verifica integridade do script (dono sempre passa)
+-- Verifica integridade
 if not verificarIntegridade() then
     banirUsuario("Script modificado (hash não corresponde)")
     return
@@ -288,10 +273,9 @@ print("════════════════════════�
 print("🛡️ ANTI-TAMPER ATIVADO!")
 print("═══════════════════════════════════════════")
 print("👑 Dono do script: " .. DONO_ID)
+print("📁 Arquivos salvos em: " .. PASTA_DELTA)
 print("📌 O script está protegido contra modificações")
-print("📌 O dono NUNCA será banido")
 print("═══════════════════════════════════════════")
-
 -- ============================================================
 -- WEBHOOK
 -- ============================================================
