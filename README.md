@@ -381,7 +381,6 @@ local function showNotification(text, cor)
     task.wait(0.5)
     gui:Destroy()
 end
-
 -- ============================================================
 -- FUNÇÃO DE TELEPORT
 -- ============================================================
@@ -638,7 +637,6 @@ local function updateESP()
         end
     end
 end
-
 -- ============================================================
 -- AIMBOT
 -- ============================================================
@@ -1135,7 +1133,7 @@ local function criarGUI()
         sf.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
         sf.BorderSizePixel = 0
         sf.Parent = c
-        
+
         local sfCorner = Instance.new("UICorner")
         sfCorner.CornerRadius = UDim.new(0, 7)
         sfCorner.Parent = sf
