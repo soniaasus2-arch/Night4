@@ -1,5 +1,5 @@
 -- ============================================================
--- DAVI HUB - RESIDENCE MASSACRE (VERSÃO CORRIGIDA)
+-- DAVI HUB - RESIDENCE MASSACRE (PARTE CORRIGIDA)
 -- ============================================================
 
 local player = game.Players.LocalPlayer
@@ -12,7 +12,62 @@ local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local ChatService = game:GetService("Chat")
+
+-- ============================================================
+-- FUNÇÃO DE NOTIFICAÇÃO (SEM TWEEN)
+-- ============================================================
+
+local function showNotification(text, cor)
+    cor = cor or Color3.fromRGB(50, 50, 50)
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "Notificacao"
+    gui.Parent = player.PlayerGui
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 350, 0, 45)
+    frame.Position = UDim2.new(1, -370, 0.05, 0)
+    frame.BackgroundColor3 = cor
+    frame.BackgroundTransparency = 0.15
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 12)
+    frameCorner.Parent = frame
+
+    local border = Instance.new("UIStroke")
+    border.Color = Color3.fromRGB(255, 140, 0)
+    border.Thickness = 1
+    border.Transparency = 0.3
+    border.Parent = frame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -20, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.Font = Enum.Font.Gotham
+    label.BackgroundTransparency = 1
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    task.wait(3)
+    gui:Destroy()
+end
+
+-- ============================================================
+-- FUNÇÃO DE TELEPORT
+-- ============================================================
+
+local function teleportar(cframe)
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = cframe
+    end
+end
 
 -- ============================================================
 -- WEBHOOK
@@ -384,17 +439,6 @@ local function showNotification(text, cor)
     fadeLabel:Play()
     task.wait(0.5)
     gui:Destroy()
-end
-
--- ============================================================
--- FUNÇÃO DE TELEPORT
--- ============================================================
-
-local function teleportar(cframe)
-    local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = cframe
-    end
 end
 
 -- ============================================================
