@@ -1,13 +1,9 @@
-
-
 local Players = game:GetService("Players")
 local client = Players.LocalPlayer
 
-=
 local FIGURE_RADIUS = 15
 local LINE_WIDTH    = 3
 local LINE_HEIGHT   = 2
-
 
 local lineFolder = Instance.new("Folder")
 lineFolder.Name = "AutoDoor50_Line"
@@ -41,7 +37,7 @@ local function drawLineTo(hrp, destPos)
     local b = destPos + Vector3.new(0, LINE_HEIGHT / 2, 0)
     createSegment(a, b)
 end
- 
+
 local function getCurrentRoom()
     local gameData = game:GetService("ReplicatedStorage"):FindFirstChild("GameData")
     if gameData and gameData:FindFirstChild("LatestRoom") then
@@ -84,7 +80,6 @@ local function figureDistance(hrp, room)
     return math.huge
 end
 
-
 task.spawn(function()
     while task.wait(0.5) do
         local enabled = Toggles and Toggles.AutoDoor50_MainToggle
@@ -109,7 +104,6 @@ task.spawn(function()
         for _, entry in ipairs(books) do
             if not (Toggles and Toggles.AutoDoor50_MainToggle) then break end
 
-            
             drawLineTo(hrp, entry.Pos)
 
             local finished = false
@@ -119,16 +113,13 @@ task.spawn(function()
             while not finished do
                 if not (Toggles and Toggles.AutoDoor50_MainToggle) then break end
 
-                
                 if figureDistance(hrp, room) <= FIGURE_RADIUS then
                     humanoid:MoveTo(hrp.Position)
                     repeat task.wait(0.2) until figureDistance(hrp, room) > FIGURE_RADIUS
                     humanoid:MoveTo(entry.Pos)
                 end
 
-                -- Atualiza a linha verde enquanto anda
                 drawLineTo(hrp, entry.Pos)
-
                 task.wait(0.1)
             end
 
@@ -138,11 +129,10 @@ task.spawn(function()
     end
 end)
 
-
 return {
     Name = "AutoDoor50",
     Title = "Auto Door 50",
-    Description = "Automatically passes door 50.",
+    Description = "Automatically passes door 50",
     Author = "TITAN DAVE",
     Version = "1.0",
     Game = 6839171747,
@@ -153,10 +143,7 @@ return {
             Name = "MainToggle",
             Arguments = {
                 Text = "Auto Door 50",
-                Default = false,
-                Callback = function(state)
-                    -- Toggles.AutoDoor50_MainToggle é lido no loop
-                end
+                Default = false
             }
         }
     }
