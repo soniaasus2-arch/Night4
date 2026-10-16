@@ -1,15 +1,13 @@
-local room = workspace.CurrentRooms["50"]
-local assets = room.Assets
-local character = game.Players.LocalPlayer.Character
-local humanoid = character:FindFirstChildOfClass("Humanoid")
-local hrp = character:WaitForChild("HumanoidRootPart")
 
+
+local Players = game:GetService("Players")
+local client = Players.LocalPlayer
+
+=
 local FIGURE_RADIUS = 15
+local LINE_WIDTH    = 3
+local LINE_HEIGHT   = 2
 
-
-local LINE_WIDTH     = 3      -- largura da linha
-local LINE_HEIGHT    = 2      -- altura (parede fina)
-local LINE_THICKNESS = 0.2
 
 local lineFolder = Instance.new("Folder")
 lineFolder.Name = "AutoDoor50_Line"
@@ -21,10 +19,8 @@ local function clearLine()
     end
 end
 
-
 local function createSegment(posA, posB)
-    local diff = posB - posA
-    local distance = diff.Magnitude
+    local distance = (posB - posA).Magnitude
     if distance < 0.2 then return end
 
     local mid = (posA + posB) / 2
@@ -39,26 +35,32 @@ local function createSegment(posA, posB)
     segment.Parent      = lineFolder
 end
 
-
-local function drawLineTo(destPos)
+local function drawLineTo(hrp, destPos)
     clearLine()
-
-    local startPos = hrp.Position
-    local a = startPos + Vector3.new(0, LINE_HEIGHT / 2, 0)
-    local b = destPos  + Vector3.new(0, LINE_HEIGHT / 2, 0)
-
+    local a = hrp.Position + Vector3.new(0, LINE_HEIGHT / 2, 0)
+    local b = destPos + Vector3.new(0, LINE_HEIGHT / 2, 0)
     createSegment(a, b)
 end
+ 
+local function getCurrentRoom()
+    local gameData = game:GetService("ReplicatedStorage"):FindFirstChild("GameData")
+    if gameData and gameData:FindFirstChild("LatestRoom") then
+        return workspace.CurrentRooms:FindFirstChild(tostring(gameData.LatestRoom.Value))
+    end
+    return nil
+end
 
+local function getBookPositions(room)
+    if not room then return {} end
+    local assets = room:FindFirstChild("Assets")
+    if not assets then return {} end
 
-local function getBookPositions()
     local books = {}
     for _, shelf in ipairs(assets:GetDescendants()) do
         if shelf.Name == "Shelf" then
             local book = shelf:FindFirstChild("Book", true)
             if book then
-                local pos = (book:IsA("BasePart") and book.Position)
-                            or book:GetPivot().Position
+                local pos = (book:IsA("BasePart") and book.Position) or book:GetPivot().Position
                 table.insert(books, {Obj = book, Pos = pos})
             end
         end
@@ -66,58 +68,96 @@ local function getBookPositions()
     return books
 end
 
-
-local function getFigure()
-    return workspace.CurrentRooms["50"].FigureSetup:FindFirstChild("Figure", true)
+local function getFigure(room)
+    if not room then return nil end
+    local setup = room:FindFirstChild("FigureSetup")
+    if setup then return setup:FindFirstChild("Figure", true) end
+    return nil
 end
 
-local function figureDistance()
-    local figure = getFigure()
+local function figureDistance(hrp, room)
+    local figure = getFigure(room)
     if figure then
-        local part = figure.PrimaryPart
-                     or figure:FindFirstChildWhichIsA("BasePart", true)
-        if part then
-            return (hrp.Position - part.Position).Magnitude
-        end
+        local part = figure.PrimaryPart or figure:FindFirstChildWhichIsA("BasePart", true)
+        if part then return (hrp.Position - part.Position).Magnitude end
     end
     return math.huge
 end
 
 
-local function walkToBooks()
-    local books = getBookPositions()
-
-    for _, entry in ipairs(books) do
-        
-        drawLineTo(entry.Pos)
-
-        local finished = false
-        humanoid:MoveTo(entry.Pos)
-
-        humanoid.MoveToFinished:Once(function()
-            finished = true
-        end)
-
-        while not finished do
-            -- Se o Figure estiver perto, para
-            if figureDistance() <= FIGURE_RADIUS then
-                humanoid:MoveTo(hrp.Position)  -- para no lugar
-                repeat
-                    task.wait(0.2)
-                until figureDistance() > FIGURE_RADIUS
-
-                humanoid:MoveTo(entry.Pos)     -- volta a ir a o livro
-            end
-
-            drawLineTo(entry.Pos)
-
-            task.wait(0.1)
+task.spawn(function()
+    while task.wait(0.5) do
+        local enabled = Toggles and Toggles.AutoDoor50_MainToggle
+        if not enabled then
+            clearLine()
+            continue
         end
 
-        
-        clearLine()
-        task.wait(0.5)
-    end
-end
+        local char = client.Character
+        if not char then continue end
 
-walkToBooks()
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not hrp then continue end
+
+        local room = getCurrentRoom()
+        if not room then continue end
+
+        local books = getBookPositions(room)
+        if #books == 0 then continue end
+
+        for _, entry in ipairs(books) do
+            if not (Toggles and Toggles.AutoDoor50_MainToggle) then break end
+
+            
+            drawLineTo(hrp, entry.Pos)
+
+            local finished = false
+            humanoid:MoveTo(entry.Pos)
+            humanoid.MoveToFinished:Once(function() finished = true end)
+
+            while not finished do
+                if not (Toggles and Toggles.AutoDoor50_MainToggle) then break end
+
+                
+                if figureDistance(hrp, room) <= FIGURE_RADIUS then
+                    humanoid:MoveTo(hrp.Position)
+                    repeat task.wait(0.2) until figureDistance(hrp, room) > FIGURE_RADIUS
+                    humanoid:MoveTo(entry.Pos)
+                end
+
+                -- Atualiza a linha verde enquanto anda
+                drawLineTo(hrp, entry.Pos)
+
+                task.wait(0.1)
+            end
+
+            clearLine()
+            task.wait(0.5)
+        end
+    end
+end)
+
+
+return {
+    Name = "AutoDoor50",
+    Title = "Auto Door 50",
+    Description = "Automatically passes door 50.",
+    Author = "TITAN DAVE",
+    Version = "1.0",
+    Game = 6839171747,
+
+    Elements = {
+        {
+            Type = "Toggle",
+            Name = "MainToggle",
+            Arguments = {
+                Text = "Auto Door 50",
+                Default = false,
+                Callback = function(state)
+                    -- Toggles.AutoDoor50_MainToggle é lido no loop
+                end
+            }
+        }
+    }
+}
