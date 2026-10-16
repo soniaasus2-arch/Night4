@@ -21,14 +21,14 @@ local function createSegment(posA, posB)
 
     local mid = (posA + posB) / 2
     local segment = Instance.new("Part")
-    segment.Size        = Vector3.new(LINE_WIDTH, LINE_HEIGHT, distance + 1)
-    segment.CFrame      = CFrame.lookAt(mid, posB)
-    segment.Anchored    = true
-    segment.CanCollide  = false
-    segment.Color       = Color3.fromRGB(0, 255, 0)
-    segment.Material    = Enum.Material.Neon
+    segment.Size         = Vector3.new(LINE_WIDTH, LINE_HEIGHT, distance + 1)
+    segment.CFrame       = CFrame.lookAt(mid, posB)
+    segment.Anchored     = true
+    segment.CanCollide   = false
+    segment.Color        = Color3.fromRGB(0, 255, 0)
+    segment.Material     = Enum.Material.Neon
     segment.Transparency = 0.2
-    segment.Parent      = lineFolder
+    segment.Parent       = lineFolder
 end
 
 local function drawLineTo(hrp, destPos)
@@ -134,9 +134,6 @@ return {
     Title = "Auto Door 50",
     Description = "Automatically passes door 50",
     Author = "TITAN DAVE",
-    Version = "1.0",
-    Game = 6839171747,
-
     Elements = {
         {
             Type = "Toggle",
